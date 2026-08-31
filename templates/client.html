@@ -8,9 +8,6 @@
       <span class="brand__sub">browse courts</span>
     </div>
     <div class="header__account">
-      {% if futsals %}
-      <a href="{{ url_for('attendance_page', futsal_id=futsals[0].id) }}" class="btn" style="margin-right: 12px;">Attendance</a>
-      {% endif %}
       <span>{{ current_user.username }}</span>
       <form method="post" action="{{ url_for('logout') }}">
         <button type="submit">Log out</button>
