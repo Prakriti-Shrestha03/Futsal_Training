@@ -39,7 +39,6 @@
             {% if f.description %}<p class="futsal-row__meta">{{ f.description }}</p>{% endif %}
           </div>
           <div class="futsal-row__actions">
-            <a href="{{ url_for('attendance_page', futsal_id=f.id) }}" class="btn btn--primary" style="font-size: 14px; padding: 10px 18px;">View Attendance</a>
             <a class="btn btn--primary" href="{{ url_for('calendar_view', futsal_id=f.id, year=now_year, month=now_month) }}" style="font-size: 14px; padding: 10px 18px;">View Calendar</a>
           </div>
         </li>
