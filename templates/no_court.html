@@ -1,0 +1,10 @@
+{% extends "auth_base.html" %}
+{% block title %}No court yet — Ledger{% endblock %}
+{% block auth_form %}
+<h2 class="auth__title">No court set up yet</h2>
+<p class="auth__sub">This app is running in single-court mode, but no court has been created yet. Ask an admin to add one from their dashboard.</p>
+
+<form method="post" action="{{ url_for('logout') }}">
+  <button type="submit" class="btn btn--primary btn--block">Log out</button>
+</form>
+{% endblock %}

@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}Payment — {{ event.name }}{% endblock %}
+
+{% block content %}
+<div class="pay-page">
+
+  <header class="pay-page__header">
+    <a href="{{ url_for('calendar_view', futsal_id=futsal.id,
+                        year=event.event_date.year,
+                        month=event.event_date.month,
+                        day=event.event_date.isoformat()) }}"
+       class="back-link">&larr; Back to calendar</a>
+    <div class="header__brand">
+      <span class="brand__mark">{{ futsal.name }}</span>
+      <span class="brand__sub">Complete your booking</span>
+    </div>
+    <div class="header__account">
+      <span>{{ current_user.username }}</span>
+      <form method="post" action="{{ url_for('logout') }}">
+        <button type="submit">Log out</button>
+      </form>
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash flash--{{ category or 'success' }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="pay-layout">
+
+    {# ── Left: booking summary ── #}
+    <section class="pay-summary">
+      <h2 class="pay-summary__title">Booking summary</h2>
+
+      <dl class="pay-dl">
+        <dt>Court</dt>
+        <dd>{{ futsal.name }}{% if futsal.location %} &mdash; {{ futsal.location }}{% endif %}</dd>
+
+        <dt>Booked by</dt>
+        <dd>{{ event.owner_name }}</dd>
+
+        <dt>Date</dt>
+        <dd>{{ event.event_date.strftime('%A, %d %b %Y') }}</dd>
+
+        <dt>Time</dt>
+        <dd>{{ event.start_time.strftime('%H:%M') }} &ndash; {{ event.end_time.strftime('%H:%M') }}</dd>
+
+        <dt>Players</dt>
+        <dd>{{ event.num_players }}</dd>
+
+        {% if event.description %}
+        <dt>Notes</dt>
+        <dd>{{ event.description }}</dd>
+        {% endif %}
+      </dl>
+
+      {# Cost breakdown #}
+      <div class="cost-breakdown">
+        <h3 class="cost-breakdown__title">Cost breakdown</h3>
+        <table class="cost-table">
+          <tr>
+            <td>
+              {{ event.num_players }} player{{ 's' if event.num_players != 1 }}
+              &times; Rs. {{ price_per_player }}/hr
+              &times;
+              {% set dur_mins = ((event.end_time.hour * 60 + event.end_time.minute) - (event.start_time.hour * 60 + event.start_time.minute)) %}
+              {% set dur_hrs  = dur_mins / 60 %}
+              {{ dur_hrs|round(1) }} hr{{ 's' if dur_hrs != 1 }}
+            </td>
+            <td class="cost-table__amt">Rs. {{ event.amount_due|int }}</td>
+          </tr>
+          <tr class="cost-table__row--paid">
+            <td>Already paid</td>
+            <td class="cost-table__amt">Rs. {{ event.amount_paid|int }}</td>
+          </tr>
+          <tr class="cost-table__row--total">
+            <td>Balance due</td>
+            <td class="cost-table__amt">Rs. {{ event.balance_due|int }}</td>
+          </tr>
+        </table>
+
+        <div class="cost-minimum">
+          Minimum required to confirm:
+          <strong>Rs. {{ event.minimum_due|int }}</strong>
+          <span class="cost-minimum__note">(half of total)</span>
+        </div>
+      </div>
+
+      {# Current status badge #}
+      <div class="pay-status-row">
+        Status:
+        <span class="pay-badge pay-badge--{{ event.payment_status }}">
+          {% if event.payment_status == 'confirmed' %}Confirmed
+          {% elif event.payment_status == 'partial' %}Partial payment
+          {% else %}Pending payment
+          {% endif %}
+        </span>
+      </div>
+    </section>
+
+    {# ── Right: QR + action ── #}
+    <section class="pay-action">
+
+      {% if event.payment_status == 'confirmed' %}
+      {# Already fully confirmed — nothing to pay #}
+      <div class="pay-action__confirmed">
+        <div class="pay-confirmed-icon" aria-hidden="true">&#10003;</div>
+        <p class="pay-action__msg">This booking is confirmed.<br>No further payment needed.</p>
+        <a href="{{ url_for('calendar_view', futsal_id=futsal.id,
+                            year=event.event_date.year,
+                            month=event.event_date.month,
+                            day=event.event_date.isoformat()) }}"
+           class="btn btn--primary">Back to calendar</a>
+      </div>
+
+      {% else %}
+      {# Payment needed #}
+      <h2 class="pay-action__title">Scan &amp; Pay</h2>
+      <p class="pay-action__sub">
+        Scan the QR code with your banking app, then choose how much to pay below.
+      </p>
+
+      {# Half-payment notice banner #}
+      <div class="pay-notice pay-notice--info">
+        <span class="pay-notice__icon" aria-hidden="true">&#9432;</span>
+        <div>
+          <strong>At least half the total must be paid to confirm your booking.</strong>
+          <p>Minimum required: <strong>Rs. {{ event.minimum_due|int }}</strong> (half of Rs. {{ event.amount_due|int }}).</p>
+          <p>You can pay the remaining balance later.</p>
+        </div>
+      </div>
+
+      {# Dummy QR — replace static/qr_dummy.png with the real merchant QR #}
+      <div class="qr-box">
+        <img src="{{ url_for('static', filename='qr_dummy.png') }}"
+             alt="Payment QR code (dummy placeholder)"
+             class="qr-img">
+        <p class="qr-label">Dummy QR &mdash; replace with real QR</p>
+      </div>
+
+      {# Payment amount display that updates with the radio buttons #}
+      <div class="pay-amount-display" id="pay-amount-display">
+        Rs. <span id="pay-amount-value">{{ event.minimum_due|int }}</span>
+      </div>
+
+      <form method="post"
+            action="{{ url_for('payment_page', futsal_id=futsal.id, event_id=event.id) }}"
+            class="pay-form" id="pay-form">
+
+        <div class="pay-options">
+          <label class="pay-option {% if event.balance_due == event.minimum_due %}pay-option--selected{% endif %}"
+                 id="label-half">
+            <input type="radio" name="pay_option" value="half"
+                   {% if event.balance_due == event.minimum_due %}checked{% endif %}>
+            <span class="pay-option__title">Pay half</span>
+            <span class="pay-option__amount">Rs. {{ event.minimum_due|int }}</span>
+            <span class="pay-option__note">Minimum to confirm booking</span>
+          </label>
+
+          <label class="pay-option" id="label-full">
+            <input type="radio" name="pay_option" value="full">
+            <span class="pay-option__title">Pay full</span>
+            <span class="pay-option__amount">Rs. {{ event.balance_due|int }}</span>
+            <span class="pay-option__note">Clear entire balance</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block btn--pay-submit">
+          Confirm payment
+        </button>
+      </form>
+
+      {# Staff / admin force-confirm override #}
+      {% if current_user.can_manage_futsals %}
+      <div class="pay-override">
+        <p class="pay-override__label">Staff / admin override</p>
+        <form method="post"
+              action="{{ url_for('force_confirm_payment', futsal_id=futsal.id, event_id=event.id) }}">
+          <button type="submit" class="btn btn--outline">Force confirm without payment</button>
+        </form>
+      </div>
+      {% endif %}
+
+      {% endif %}{# end payment_status check #}
+
+    </section>
+  </div>{# end pay-layout #}
+</div>
+
+<script>
+(function () {
+  const halfAmt = {{ event.minimum_due|int }};
+  const fullAmt = {{ event.balance_due|int }};
+  const display = document.getElementById("pay-amount-value");
+  const labelHalf = document.getElementById("label-half");
+  const labelFull = document.getElementById("label-full");
+
+  document.querySelectorAll('input[name="pay_option"]').forEach(function (radio) {
+    radio.addEventListener("change", function () {
+      display.textContent = this.value === "full" ? fullAmt : halfAmt;
+      labelHalf.classList.toggle("pay-option--selected", this.value === "half");
+      labelFull.classList.toggle("pay-option--selected", this.value === "full");
+    });
+  });
+})();
+</script>
+{% endblock %}

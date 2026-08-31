@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+{% block title %}{{ futsal.name }} — {{ month_name }} {{ year }}{% endblock %}
+
+{% macro cselect(id, name, options, default_index=0) %}
+<div class="cselect" id="{{ id }}" data-name="{{ name }}">
+  <button type="button" class="cselect__trigger" aria-haspopup="listbox" aria-expanded="false">
+    <span class="cselect__value">{{ options[default_index][1] }}</span>
+  </button>
+  <input type="hidden" name="{{ name }}" value="{{ options[default_index][0] }}">
+  <ul class="cselect__list" role="listbox" hidden>
+    {% for value, label in options %}
+    <li role="option" tabindex="-1"
+        class="cselect__option{% if loop.index0 == default_index %} is-selected{% endif %}"
+        data-value="{{ value }}">{{ label }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endmacro %}
+
+{% block content %}
+
+{#
+  All server-side values that JavaScript needs are stored as data-* attributes
+  on this single element. No Jinja expressions appear inside any <script> block,
+  which eliminates all false-positive linter errors.
+#}
+<div id="page-data"
+     data-futsal-id="{{ futsal.id }}"
+     data-price-per-player="{{ price_per_player_per_hour | int }}"
+     style="display:none"
+     aria-hidden="true"></div>
+
+<div class="app">
+
+  {# ── Header ── #}
+  <header class="app__header">
+    <div class="header__brand">
+      <span class="brand__mark">{{ futsal.name }}</span>
+      <span class="brand__sub">scheduling calendar</span>
+    </div>
+
+    <nav class="month-nav">
+      <a href="{{ url_for('calendar_view', futsal_id=futsal.id, year=prev_year, month=prev_month) }}"
+         class="nav-btn" aria-label="Previous month">&larr;</a>
+      <h1>{{ month_name }} <span class="year">{{ year }}</span></h1>
+      <a href="{{ url_for('calendar_view', futsal_id=futsal.id, year=next_year, month=next_month) }}"
+         class="nav-btn" aria-label="Next month">&rarr;</a>
+    </nav>
+
+    <div class="header__account">
+      {% if current_user.can_manage_futsals %}
+      <button type="button" class="header__gear"
+              onclick="document.getElementById('edit-court-dialog').showModal()"
+              aria-label="Edit court details">&#9881; Court settings</button>
+      {% endif %}
+      {% if multi_futsal_mode or current_user.is_admin %}
+      <a href="{{ url_for(dashboard_endpoint()) }}">Dashboard</a>
+      {% endif %}
+      <span>{{ current_user.username }}</span>
+      <form method="post" action="{{ url_for('logout') }}">
+        <button type="submit">Log out</button>
+      </form>
+    </div>
+  </header>
+
+  {# Court settings dialog — staff / admin only #}
+  {% if current_user.can_manage_futsals %}
+  <dialog id="edit-court-dialog" class="dialog">
+    <form method="post" action="{{ url_for('edit_futsal', futsal_id=futsal.id) }}" class="dialog__form">
+      <input type="hidden" name="next" value="{{ request.full_path }}">
+      <h3>Court settings</h3>
+      <label>Name <input type="text" name="name" value="{{ futsal.name }}" required></label>
+      <label>Location <input type="text" name="location" value="{{ futsal.location }}"></label>
+      <label>Description <textarea name="description" rows="3">{{ futsal.description }}</textarea></label>
+      <div class="dialog__actions">
+        <button type="button" class="btn"
+                onclick="document.getElementById('edit-court-dialog').close()">Cancel</button>
+        <button type="submit" class="btn btn--primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+  {% endif %}
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash flash--{{ category or 'success' }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="board">
+
+    {# ── Calendar grid ── #}
+    <section class="grid" aria-label="Calendar grid">
+      <div class="grid__weekdays">
+        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span>
+        <span>Thu</span><span>Fri</span><span>Sat</span>
+      </div>
+      {% for week in grid %}
+      <div class="grid__week">
+        {% for d in week %}
+          {% if d is none %}
+            <span class="cell cell--blank" aria-hidden="true"></span>
+          {% else %}
+            {% set key = d.isoformat() %}
+            {% set count   = events_by_day.get(key, [])|length %}
+            {% set is_past = d < today %}
+            <a class="cell
+                       {% if d == today %}cell--today{% endif %}
+                       {% if selected and d == selected %}cell--selected{% endif %}
+                       {% if is_past %}cell--past{% endif %}"
+               href="{{ url_for('calendar_view', futsal_id=futsal.id,
+                                year=year, month=month, day=key) }}#agenda">
+              <span class="cell__num">{{ d.day }}</span>
+              <span class="cell__indicators">
+                {% if count %}
+                  <span class="cell__tally" aria-label="{{ count }} booking{{ 's' if count != 1 }}">
+                    {{ '\u2502' * ([count, 3]|min) }}{% if count > 3 %}+{% endif %}
+                  </span>
+                {% endif %}
+              </span>
+            </a>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </section>
+
+    {# ── Agenda sidebar ── #}
+    <aside class="agenda" id="agenda">
+      {% if selected %}
+        <div class="agenda__head">
+          <p class="agenda__date">{{ selected.strftime('%A') }}</p>
+          <h2>{{ selected.strftime('%d %b %Y') }}</h2>
+        </div>
+
+        <ul class="agenda__list">
+
+          {# ── Regular bookings ── #}
+          {% for e in day_events %}
+          {% set editable = current_user.can_manage_futsals or e.user_id == current_user.id %}
+          {% set e_past = (selected < today) or (selected == today and e.end_time < now.time()) %}
+          <li class="entry {% if e.is_pending %}entry--pending{% endif %} {% if e_past %}entry--past{% endif %}">
+            <div class="entry__time">
+              {{ e.start_time.strftime('%H:%M') }}&ndash;{{ e.end_time.strftime('%H:%M') }}
+            </div>
+            <div class="entry__body">
+              <div class="entry__name-row">
+                <p class="entry__name">{{ e.name }}</p>
+                <span class="pay-badge pay-badge--{{ e.payment_status }}">
+                  {% if e.payment_status == 'confirmed' %}Confirmed
+                  {% elif e.payment_status == 'partial' %}Partial
+                  {% else %}Pending payment
+                  {% endif %}
+                </span>
+              </div>
+              {% if e.description %}<p class="entry__desc">{{ e.description }}</p>{% endif %}
+              {% if e.phone_number %}<p class="entry__desc">Phone: {{ e.phone_number }}</p>{% endif %}
+              <p class="entry__payment-info">
+                {{ e.num_players }} player{{ 's' if e.num_players != 1 }}
+                &middot; Rs. {{ price_per_player_per_hour }}/player/hr
+                &middot; Rs. {{ e.amount_paid|int }} paid of Rs. {{ e.amount_due|int }}
+                {% if e.balance_due > 0 %}
+                  &middot; <span class="entry__balance">Rs. {{ e.balance_due|int }} remaining</span>
+                {% endif %}
+              </p>
+              <p class="entry__owner">Booked by {{ e.owner_name }}</p>
+            </div>
+            {% if editable %}
+            <div class="entry__actions">
+              {% if e.payment_status != 'confirmed' %}
+              <a href="{{ url_for('payment_page', futsal_id=futsal.id, event_id=e.id) }}"
+                 class="icon-btn icon-btn--pay">Pay now</a>
+              {% endif %}
+              {% if e.is_upcoming %}
+              {#
+                All booking data is stored as data-* attributes so no Jinja
+                expressions appear inside onclick (which the JS linter would flag).
+              #}
+              <button type="button" class="icon-btn js-edit-btn"
+                      data-id="{{ e.id }}"
+                      data-name="{{ e.name }}"
+                      data-desc="{{ e.description }}"
+                      data-date="{{ e.event_date.isoformat() }}"
+                      data-start="{{ e.start_time.strftime('%H:%M') }}"
+                      data-duration="{{ e.duration_minutes }}">Edit</button>
+              {% endif %}
+              <form method="post"
+                    action="{{ url_for('delete_event', futsal_id=futsal.id, event_id=e.id) }}">
+                <button type="submit" class="icon-btn icon-btn--danger">Delete</button>
+              </form>
+              {% if current_user.can_manage_futsals and e.payment_status != 'confirmed' %}
+              <form method="post"
+                    action="{{ url_for('force_confirm_payment', futsal_id=futsal.id, event_id=e.id) }}">
+                <button type="submit" class="icon-btn icon-btn--confirm">Force confirm</button>
+              </form>
+              {% endif %}
+            </div>
+            {% endif %}
+          </li>
+          {% else %}
+          <li class="entry entry--empty">No bookings for this day yet.</li>
+          {% endfor %}
+
+        </ul>
+
+        {# Action button — date stored in data-* to avoid Jinja-in-onclick #}
+        <div class="agenda__btns"
+             data-selected="{{ selected.isoformat() }}">
+          <button type="button" class="btn btn--primary btn--block js-open-add">
+            + Add booking
+          </button>
+        </div>
+
+      {% else %}
+        <div class="agenda__placeholder">
+          <p>Pick a day on the calendar to see or add bookings.</p>
+        </div>
+      {% endif %}
+    </aside>
+
+  </div>{# end .board #}
+
+  {# ══════════════════════════════════════════
+     ADD BOOKING DIALOG
+     ══════════════════════════════════════════ #}
+  <dialog id="add-dialog" class="dialog">
+    <form method="post" action="{{ url_for('add_event', futsal_id=futsal.id) }}"
+          class="dialog__form" id="add-booking-form">
+      <h3>New booking &mdash; {{ futsal.name }}</h3>
+
+      <label>Date
+        <input type="date" name="event_date" id="add-date"
+               min="{{ today.isoformat() }}" required>
+      </label>
+      <label>Booking name
+        <input type="text" name="name" placeholder="Who's booking" required>
+      </label>
+      <label>Phone Number
+        <input type="tel" name="phone_number" placeholder="9812345678" pattern="[0-9]{10}" title="Enter exactly 10 digits" maxlength="10">
+      </label>
+      <label>Notes
+        <textarea name="description" rows="2" placeholder="Optional details"></textarea>
+      </label>
+      <label>Number of players
+        <input type="number" name="num_players" id="add-num-players"
+               min="1" max="22" value="1" required>
+      </label>
+
+      <div class="time-row">
+        <label>Start time
+          {{ cselect("add-start-select", "start_time", start_slots) }}
+        </label>
+        <label>Duration
+          {{ cselect("add-duration-select", "duration", duration_options) }}
+        </label>
+      </div>
+
+      {# Cost preview placed BELOW time selectors so the hidden input exists when JS reads it #}
+      <div class="cost-preview" aria-live="polite">
+        <span class="cost-preview__label">Total cost:</span>
+        <span class="cost-preview__total" id="cost-total">&mdash;</span>
+        <span class="cost-preview__label">Minimum to book (half):</span>
+        <span class="cost-preview__half" id="cost-half">&mdash;</span>
+      </div>
+
+      <div class="dialog-pay-notice">
+        &#9432; At least <strong>half the total</strong> must be paid to confirm. You can pay the rest later.
+      </div>
+
+      <div class="dialog__actions">
+        <button type="button" class="btn"
+                onclick="document.getElementById('add-dialog').close()">Cancel</button>
+        <button type="submit" class="btn btn--primary">Next: Pay &rarr;</button>
+      </div>
+    </form>
+  </dialog>
+
+  {# ══════════════════════════════════════════
+     EDIT BOOKING DIALOG
+     ══════════════════════════════════════════ #}
+  <dialog id="edit-dialog" class="dialog">
+    <form method="post" id="edit-form" action=""
+          data-futsal-id="{{ futsal.id }}" class="dialog__form">
+      <h3>Edit booking</h3>
+      <label>Date
+        <input type="date" name="event_date" id="edit-date"
+               min="{{ today.isoformat() }}" required>
+      </label>
+      <label>Booking name
+        <input type="text" name="name" id="edit-name" required>
+      </label>
+      <label>Notes
+        <textarea name="description" id="edit-desc" rows="2"></textarea>
+      </label>
+      <div class="time-row">
+        <label>Start time
+          {{ cselect("edit-start-select", "start_time", start_slots) }}
+        </label>
+        <label>Duration
+          {{ cselect("edit-duration-select", "duration", duration_options) }}
+        </label>
+      </div>
+      <div class="dialog__actions">
+        <button type="button" class="btn"
+                onclick="document.getElementById('edit-dialog').close()">Cancel</button>
+        <button type="submit" class="btn btn--primary">Save changes</button>
+      </div>
+    </form>
+  </dialog>
+
+</div>{# end .app #}
+
+{# ══════════════════════════════════════════
+   SCRIPTS  —  zero Jinja inside <script>
+   ══════════════════════════════════════════ #}
+<script>
+(function () {
+  "use strict";
+
+  /* ── Read server values from data-* attributes ── */
+  var pageData     = document.getElementById("page-data");
+  var futsalId     = pageData ? pageData.dataset.futsalId : "";
+  var pricePerPlayerPerHour = pageData ? (parseInt(pageData.dataset.pricePerPlayer, 10) || 100) : 100;
+
+  /* ── Open Add-booking dialog ── */
+  function openAddDialog() {
+    var btns = document.querySelector(".agenda__btns");
+    var dateStr = btns ? btns.dataset.selected : "";
+    var dateInput = document.getElementById("add-date");
+    if (dateInput && dateStr) dateInput.value = dateStr;
+    /* Setting .value via JS does NOT fire a native "change" event, so the
+       past-time-disabling refresh (wired to that event in app.js) would
+       never run here on its own — call it explicitly. */
+    if (typeof pastTimeRefreshers !== "undefined" && pastTimeRefreshers["add-start-select"]) {
+      pastTimeRefreshers["add-start-select"]();
+    }
+    document.getElementById("add-dialog").showModal();
+    updateCost();
+  }
+
+  /* ── Open Edit dialog (data read from button's data-* attributes) ── */
+  function openEditDialog(btn) {
+    var id       = btn.dataset.id;
+    var name     = btn.dataset.name;
+    var desc     = btn.dataset.desc;
+    var dateVal  = btn.dataset.date;
+    var start    = btn.dataset.start;
+    var duration = btn.dataset.duration;
+
+    var form = document.getElementById("edit-form");
+    form.action = "/futsal/" + futsalId + "/event/" + id + "/update";
+
+    document.getElementById("edit-date").value = dateVal;
+    document.getElementById("edit-name").value = name;
+    document.getElementById("edit-desc").value = desc;
+
+    /* Same fix as openAddDialog: refresh past-time disabling before we set
+       the actual saved start time, since setting .value programmatically
+       doesn't fire "change" on its own. */
+    if (typeof pastTimeRefreshers !== "undefined" && pastTimeRefreshers["edit-start-select"]) {
+      pastTimeRefreshers["edit-start-select"]();
+    }
+
+    /* Update custom selects */
+    if (window.setCselectValue) {
+      setCselectValue(document.getElementById("edit-start-select"), start);
+      setCselectValue(document.getElementById("edit-duration-select"), String(duration));
+    }
+
+    document.getElementById("edit-dialog").showModal();
+  }
+
+  /* ── Cost preview: bookings ── */
+
+  function updateCost() {
+    var playerInput   = document.getElementById("add-num-players");
+    var durationInput = document.querySelector("#add-duration-select input[type=hidden]");
+    var totalEl  = document.getElementById("cost-total");
+    var halfEl   = document.getElementById("cost-half");
+    if (!playerInput || !durationInput || !totalEl) return;
+
+    var players = Math.max(1, parseInt(playerInput.value, 10) || 1);
+    var minutes = parseInt(durationInput.value, 10) || 60;
+    var total   = players * pricePerPlayerPerHour * (minutes / 60);
+    totalEl.textContent = "Rs. " + Math.round(total);
+    halfEl.textContent  = "Rs. " + Math.round(total / 2);
+  }
+
+  /* ── Wire everything up after DOM is ready ── */
+  document.addEventListener("DOMContentLoaded", function () {
+
+    /* Add booking button */
+    var addBtn = document.querySelector(".js-open-add");
+    if (addBtn) addBtn.addEventListener("click", openAddDialog);
+
+    /* Edit buttons — delegate from the agenda list */
+    document.querySelectorAll(".js-edit-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () { openEditDialog(btn); });
+    });
+
+    /* Cost preview — player count */
+    var playerInput = document.getElementById("add-num-players");
+    if (playerInput) playerInput.addEventListener("input", updateCost);
+
+    /* Cost preview — duration option clicks */
+    var durSelect = document.getElementById("add-duration-select");
+    if (durSelect) {
+      durSelect.querySelectorAll(".cselect__option").forEach(function (opt) {
+        opt.addEventListener("click", function () { setTimeout(updateCost, 0); });
+      });
+      /* Also watch hidden input via MutationObserver */
+      var hiddenDur = durSelect.querySelector("input[type=hidden]");
+      if (hiddenDur) {
+        new MutationObserver(updateCost)
+          .observe(hiddenDur, { attributes: true, attributeFilter: ["value"] });
+      }
+    }
+
+    /* Close dialogs on backdrop click */
+    document.querySelectorAll("dialog.dialog").forEach(function (dlg) {
+      dlg.addEventListener("click", function (e) {
+        var r = dlg.getBoundingClientRect();
+        if (e.clientX < r.left || e.clientX > r.right ||
+            e.clientY < r.top  || e.clientY > r.bottom) {
+          dlg.close();
+        }
+      });
+    });
+
+    /* Initial calc */
+    updateCost();
+  });
+
+})();
+</script>
+{% endblock %}

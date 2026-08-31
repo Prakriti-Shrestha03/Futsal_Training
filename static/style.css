@@ -1,0 +1,2154 @@
+    :root {
+  --paper: #E7E4DA;
+  --surface: #FBFAF5;
+  --surface-dim: #F1EEE5;
+  --ink: #202B3B;
+  --ink-soft: #5C6473;
+  --pine: #2F6F5E;
+  --pine-dark: #23564A;
+  --gold: #D9A441;
+  --rust: #B5533C;
+  --hairline: #CFC9BB;
+
+  --font-display: "Zilla Slab", Georgia, serif;
+  --font-body: "Inter", -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+/* ---------- Header ---------- */
+
+.app__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 18px;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.app__header::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 1px;
+  background-image: radial-gradient(circle, var(--hairline) 1.5px, transparent 1.6px),
+    linear-gradient(to right, var(--hairline) 0%, var(--hairline) 100%);
+  background-size: 14px 100%, 100% 1px;
+  background-repeat: repeat-x;
+  background-position: 0 bottom, 0 bottom;
+  opacity: 0.9;
+}
+
+.header__brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.brand__mark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: 0.2px;
+}
+
+.brand__sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.6px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.month-nav h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 22px;
+  margin: 0;
+  min-width: 210px;
+  text-align: center;
+}
+
+.month-nav .year {
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 16px;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.nav-btn:hover {
+  background: var(--pine);
+  color: var(--surface);
+  border-color: var(--pine);
+}
+
+.flash {
+  background: var(--pine);
+  color: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  margin-bottom: 18px;
+  display: inline-block;
+}
+
+.flash--error {
+  background: var(--rust);
+  color: var(--surface);
+}
+
+.flash--warning {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.flash--success {
+  background: var(--pine);
+  color: var(--surface);
+}
+
+/* ---------- Board layout ---------- */
+
+.board {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .board { grid-template-columns: 1fr; }
+}
+
+/* ---------- Calendar grid ---------- */
+
+.grid {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.grid__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+  padding: 6px 4px 10px;
+}
+
+.grid__week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  aspect-ratio: 1 / 0.85;
+  padding: 8px 9px;
+  border-radius: 7px;
+  background: var(--surface-dim);
+  text-decoration: none;
+  color: var(--ink);
+  border: 1px solid transparent;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cell:hover {
+  border-color: var(--pine);
+}
+
+.cell--blank {
+  background: transparent;
+}
+
+.cell--today {
+  background: color-mix(in srgb, var(--gold) 22%, var(--surface-dim));
+  border-color: var(--gold);
+}
+
+.cell--selected {
+  border-color: var(--pine);
+  box-shadow: inset 0 0 0 1.5px var(--pine);
+}
+
+.cell__num {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.cell__tally {
+  align-self: flex-end;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--pine-dark);
+  letter-spacing: 1px;
+}
+
+/* ---------- Agenda sidebar ---------- */
+
+.agenda {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 20px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.agenda__placeholder {
+  color: var(--ink-soft);
+  font-size: 14px;
+  margin: auto 0;
+  text-align: center;
+}
+
+.agenda__head {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--hairline);
+}
+
+.agenda__date {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--ink-soft);
+}
+
+.agenda__head h2 {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-size: 21px;
+}
+
+.agenda__list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.entry {
+  display: grid;
+  grid-template-columns: 74px 1fr;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.entry--empty {
+  grid-template-columns: 1fr;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  border-bottom: none;
+  padding: 6px 0;
+}
+
+.entry__time {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--pine-dark);
+  padding-top: 1px;
+}
+
+.entry__name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 14.5px;
+}
+
+.entry__desc {
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.entry__owner {
+  margin: 5px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--ink-soft);
+}
+
+.entry__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 0;
+}
+
+.icon-btn:hover { color: var(--pine-dark); }
+.icon-btn--danger:hover { color: var(--rust); }
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 10px 16px;
+  border-radius: 7px;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.btn--primary {
+  background: var(--pine);
+  border-color: var(--pine);
+  color: var(--surface);
+}
+
+.btn--primary:hover { background: var(--pine-dark); }
+
+.btn--block { width: 100%; margin-top: auto; }
+
+/* ---------- Dialogs ---------- */
+
+dialog.dialog {
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 0;
+  background: var(--surface);
+  width: min(420px, 92vw);
+}
+
+dialog.dialog::backdrop {
+  background: rgba(32, 43, 59, 0.35);
+}
+
+.dialog__form {
+  padding: 22px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dialog__form h3 {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-size: 19px;
+}
+
+.dialog__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dialog__form input,
+.dialog__form textarea {
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  background: var(--surface-dim);
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.dialog__form textarea { resize: vertical; }
+
+.dialog__form input:hover,
+.dialog__form textarea:hover {
+  border-color: var(--pine);
+}
+
+.dialog__form input:focus,
+.dialog__form textarea:focus {
+  outline: none;
+  border-color: var(--pine);
+  background-color: var(--surface);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pine) 18%, transparent);
+}
+
+/* ---------- Custom dropdown listbox (replaces native <select>) ---------- */
+
+.cselect {
+  position: relative;
+}
+
+.cselect__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  background: var(--surface-dim);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.cselect__trigger::after {
+  content: "";
+  width: 13px;
+  height: 13px;
+  flex: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M4 6l4 4 4-4' stroke='%235C6473' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-size: contain;
+  background-repeat: no-repeat;
+  transition: transform 0.15s ease;
+}
+
+.cselect[data-open="true"] .cselect__trigger::after {
+  transform: rotate(180deg);
+}
+
+.cselect__value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 13.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cselect__trigger:hover {
+  border-color: var(--pine);
+}
+
+.cselect[data-open="true"] .cselect__trigger,
+.cselect__trigger:focus-visible {
+  outline: none;
+  border-color: var(--pine);
+  background-color: var(--surface);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pine) 18%, transparent);
+}
+
+.cselect__list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 216px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(32, 43, 59, 0.16);
+}
+
+.cselect__option {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  padding: 7px 10px;
+  border-radius: 5px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.cselect__option:hover,
+.cselect__option:focus {
+  background: var(--surface-dim);
+  outline: none;
+}
+
+.cselect__option.is-selected {
+  background: var(--pine);
+  color: var(--surface);
+  font-weight: 600;
+}
+
+.cselect__option.is-selected:hover,
+.cselect__option.is-selected:focus {
+  background: var(--pine-dark);
+}
+
+.cselect__option.is-disabled {
+  color: var(--ink-soft);
+  opacity: 0.45;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.cselect__option.is-disabled:hover,
+.cselect__option.is-disabled:focus {
+  background: none;
+}
+
+.time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+/* ---------- Auth pages ---------- */
+
+.auth {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.auth__card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 32px 30px;
+  width: min(380px, 100%);
+}
+
+.auth__brand {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed var(--hairline);
+}
+
+.auth__title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  margin: 4px 0 2px;
+}
+
+.auth__sub {
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  margin: 0 0 20px;
+}
+
+.auth__form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.auth__form input {
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 9px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  background: var(--surface-dim);
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.auth__switch {
+  margin: 18px 0 0;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+
+.auth__switch a {
+  color: var(--pine-dark);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth__switch a:hover { text-decoration: underline; }
+
+/* ---------- Header account controls ---------- */
+
+.header__account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.header__account form { margin: 0; }
+
+.header__account a {
+  color: var(--pine-dark);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.header__account button {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--pine-dark);
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+/* ---------- Dashboard panels (admin / staff / client) ---------- */
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.panel-grid--single {
+  grid-template-columns: 1fr;
+  max-width: 720px;
+}
+
+@media (max-width: 860px) {
+  .panel-grid { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 22px;
+}
+
+.panel__title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  margin: 0 0 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--hairline);
+}
+
+.panel__note {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+}
+
+/* ---------- Futsal court list ---------- */
+
+.futsal-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.futsal-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.futsal-row:last-of-type { border-bottom: none; }
+
+.futsal-row__name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.futsal-row__name:hover { color: var(--pine-dark); text-decoration: underline; }
+
+.futsal-row__meta {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.futsal-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+}
+
+.futsal-row__actions form { margin: 0; }
+
+/* ---------- Add-disclosure (native <details> styled as a subtle expander) ---------- */
+
+.add-disclosure {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--hairline);
+}
+
+.add-disclosure summary {
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--pine-dark);
+  list-style: none;
+}
+
+.add-disclosure summary::-webkit-details-marker { display: none; }
+
+.inline-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.inline-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.inline-form input,
+.inline-form textarea,
+.inline-form select {
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  background: var(--surface-dim);
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.inline-form input:focus,
+.inline-form textarea:focus,
+.inline-form select:focus {
+  outline: none;
+  border-color: var(--pine);
+  background-color: var(--surface);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pine) 18%, transparent);
+}
+
+/* ---------- User table (admin) ---------- */
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.user-table th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ink-soft);
+  padding: 0 8px 10px 0;
+  border-bottom: 1px dashed var(--hairline);
+}
+
+.user-table td {
+  padding: 10px 8px 10px 0;
+  border-bottom: 1px solid var(--hairline);
+  vertical-align: middle;
+}
+
+.user-table tr:last-child td { border-bottom: none; }
+
+.role-select {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  padding: 5px 8px;
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  background: var(--surface-dim);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.role-badge {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--pine-dark);
+  background: color-mix(in srgb, var(--pine) 14%, var(--surface-dim));
+  padding: 4px 8px;
+  border-radius: 5px;
+}
+
+.role-form { margin: 0; }
+
+/* ============================================================
+   PAYMENT FLOW STYLES
+   ============================================================ */
+
+/* ---------- Payment status badges ---------- */
+
+.pay-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.pay-badge--pending {
+  background: color-mix(in srgb, var(--rust) 12%, var(--surface));
+  color: var(--rust);
+  border-color: color-mix(in srgb, var(--rust) 30%, transparent);
+}
+
+.pay-badge--partial {
+  background: color-mix(in srgb, var(--gold) 16%, var(--surface));
+  color: #8a5e0a;
+  border-color: color-mix(in srgb, var(--gold) 40%, transparent);
+}
+
+.pay-badge--confirmed {
+  background: color-mix(in srgb, var(--pine) 12%, var(--surface));
+  color: var(--pine-dark);
+  border-color: color-mix(in srgb, var(--pine) 28%, transparent);
+}
+
+/* ---------- Pending entry in agenda (muted) ---------- */
+
+.entry--pending {
+  opacity: 0.62;
+}
+
+.entry--pending .entry__name {
+  color: var(--ink-soft);
+}
+
+/* ---------- Entry name row (name + badge side by side) ---------- */
+
+.entry__name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Payment info line under booking ---------- */
+
+.entry__payment-info {
+  margin: 4px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.entry__balance {
+  color: var(--rust);
+  font-weight: 600;
+}
+
+/* ---------- Pay now / Force confirm buttons ---------- */
+
+.icon-btn--pay {
+  color: var(--pine-dark);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--pine) 40%, transparent);
+}
+
+.icon-btn--pay:hover { color: var(--pine); }
+
+.icon-btn--confirm { color: var(--gold); }
+.icon-btn--confirm:hover { color: #8a5e0a; }
+
+/* ---------- Cost preview in add-dialog ---------- */
+
+.cost-preview {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  background: var(--surface-dim);
+  border: 1px solid var(--hairline);
+  border-radius: 7px;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+.cost-preview__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--ink-soft);
+  align-self: center;
+}
+
+.cost-preview__total {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+}
+
+.cost-preview__half {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pine-dark);
+  text-align: right;
+}
+
+/* ---------- Payment page layout ---------- */
+
+.pay-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.pay-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 18px;
+  margin-bottom: 28px;
+  position: relative;
+}
+
+.pay-page__header::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 1px;
+  background-image: radial-gradient(circle, var(--hairline) 1.5px, transparent 1.6px),
+    linear-gradient(to right, var(--hairline), var(--hairline));
+  background-size: 14px 100%, 100% 1px;
+  background-repeat: repeat-x;
+  background-position: 0 bottom, 0 bottom;
+  opacity: 0.9;
+}
+
+.pay-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 28px;
+  align-items: start;
+}
+
+@media (max-width: 780px) {
+  .pay-layout { grid-template-columns: 1fr; }
+}
+
+/* ---------- Booking summary (left column) ---------- */
+
+.pay-summary {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 24px;
+}
+
+.pay-summary__title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  margin: 0 0 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--hairline);
+}
+
+.pay-dl {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 8px 16px;
+  margin: 0 0 20px;
+  font-size: 13.5px;
+}
+
+.pay-dl dt {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--ink-soft);
+  padding-top: 2px;
+}
+
+.pay-dl dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+/* ---------- Cost breakdown table ---------- */
+
+.cost-breakdown {
+  background: var(--surface-dim);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.cost-breakdown__title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+}
+
+.cost-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.cost-table td {
+  padding: 5px 0;
+}
+
+.cost-table__amt {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.cost-table__row--paid td { color: var(--pine-dark); }
+
+.cost-table__row--total {
+  border-top: 1px solid var(--hairline);
+}
+
+.cost-table__row--total td {
+  padding-top: 8px;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.cost-minimum {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.cost-minimum strong { color: var(--ink); }
+.cost-minimum__note { font-size: 11px; }
+
+.pay-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--ink-soft);
+}
+
+/* ---------- Payment action panel (right column) ---------- */
+
+.pay-action {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.pay-action__title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  margin: 0;
+}
+
+.pay-action__sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+/* ---------- QR box ---------- */
+
+.qr-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: var(--surface-dim);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+}
+
+.qr-img {
+  width: 180px;
+  height: 180px;
+  image-rendering: pixelated;
+  border-radius: 4px;
+}
+
+.qr-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  text-align: center;
+  margin: 0;
+}
+
+/* ---------- Amount display ---------- */
+
+.pay-amount-display {
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+}
+
+/* ---------- Pay options (radio cards) ---------- */
+
+.pay-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pay-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px;
+  border: 1.5px solid var(--hairline);
+  border-radius: 8px;
+  cursor: pointer;
+  background: var(--surface-dim);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.pay-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pay-option:hover {
+  border-color: var(--pine);
+  background: var(--surface);
+}
+
+.pay-option--selected {
+  border-color: var(--pine);
+  background: color-mix(in srgb, var(--pine) 8%, var(--surface));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--pine) 22%, transparent);
+}
+
+.pay-option__title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--ink-soft);
+}
+
+.pay-option__amount {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.pay-option__note {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  line-height: 1.3;
+}
+
+.btn--pay-submit {
+  padding: 13px 16px;
+  font-size: 15px;
+}
+
+/* ---------- Already-confirmed state ---------- */
+
+.pay-action__confirmed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  text-align: center;
+}
+
+.pay-confirmed-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--pine) 15%, var(--surface));
+  color: var(--pine-dark);
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--pine);
+}
+
+.pay-action__msg {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+/* ---------- Staff override section ---------- */
+
+/* Half-payment notice banner on payment pages */
+.pay-notice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.pay-notice--info {
+  background: color-mix(in srgb, var(--gold) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--gold) 50%, transparent);
+}
+
+.pay-notice__icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  line-height: 1.3;
+  color: var(--gold);
+}
+
+.pay-notice p {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* Inline half-payment notice inside booking / training dialogs */
+.dialog-pay-notice {
+  background: color-mix(in srgb, var(--gold) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  color: var(--ink);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.pay-override {
+  padding-top: 16px;
+  border-top: 1px dashed var(--hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pay-override__label {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--ink-soft);
+}
+
+.btn--outline {
+  background: transparent;
+  border: 1.5px solid var(--hairline);
+  color: var(--ink-soft);
+  font-size: 13px;
+  padding: 9px 16px;
+}
+
+.btn--outline:hover {
+  border-color: var(--pine);
+  color: var(--pine-dark);
+}
+
+/* ---------- Back link ---------- */
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: color 0.15s ease;
+  align-self: flex-start;
+}
+
+.back-link:hover { color: var(--pine-dark); }
+
+/* ============================================================
+   TRAINING STYLES
+   ============================================================ */
+
+/* ---------- Calendar cell — training day ---------- */
+
+.cell--training {
+  background: color-mix(in srgb, var(--pine) 10%, var(--surface-dim));
+  border-color: color-mix(in srgb, var(--pine) 25%, transparent);
+}
+
+.cell__indicators {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+}
+
+.cell__train-marker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--surface);
+  background: var(--pine);
+  border-radius: 3px;
+  padding: 1px 4px;
+  line-height: 1.3;
+  letter-spacing: 0.5px;
+}
+
+/* ---------- Training entry in agenda ---------- */
+
+.entry--training {
+  background: color-mix(in srgb, var(--pine) 5%, var(--surface));
+  border-radius: 7px;
+  padding: 10px 10px;
+  border: 1px solid color-mix(in srgb, var(--pine) 20%, var(--hairline));
+}
+
+.entry__train-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--surface);
+  background: var(--pine);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* ---------- Agenda action buttons row ---------- */
+
+.agenda__btns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+/* ---------- Training button variant ---------- */
+
+.btn--training {
+  background: var(--pine-dark);
+  border-color: var(--pine-dark);
+  color: var(--surface);
+}
+
+.btn--training:hover {
+  background: color-mix(in srgb, var(--pine-dark) 85%, black);
+}
+
+/* ---------- Training dialog — wider + two-column grid ---------- */
+
+dialog.dialog--wide {
+  width: min(640px, 96vw);
+}
+
+.dialog__two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .dialog__two-col { grid-template-columns: 1fr; }
+}
+
+/* ---------- Day-of-week checkboxes ---------- */
+
+.day-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.day-check {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px !important;
+  font-family: var(--font-body) !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  color: var(--ink) !important;
+  cursor: pointer;
+  padding: 5px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  background: var(--surface-dim);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.day-check:has(input:checked) {
+  border-color: var(--pine);
+  background: color-mix(in srgb, var(--pine) 10%, var(--surface));
+  color: var(--pine-dark) !important;
+}
+
+.day-check input[type="checkbox"] {
+  accent-color: var(--pine);
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+}
+
+/* ---------- Dialog note ---------- */
+
+.dialog__note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* required asterisk in form labels */
+.required-mark {
+  color: var(--rust);
+  margin-left: 2px;
+}
+
+/* helper hint text below an input */
+.field-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 4px;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* ---------- Fixed training schedule info box ---------- */
+
+.training-schedule-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: color-mix(in srgb, var(--pine) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--pine) 25%, var(--hairline));
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.training-schedule-info__icon {
+  font-size: 20px;
+  flex: none;
+  line-height: 1.3;
+}
+
+.training-schedule-info__line {
+  margin: 0 0 3px;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.training-schedule-info__note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+
+/* ---------- Past dates and events styling ---------- */
+
+/* Past calendar cells - diagonal strikethrough */
+.cell--past {
+  opacity: 0.5;
+  position: relative;
+}
+
+.cell--past::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to bottom right,
+    transparent calc(50% - 1px),
+    var(--ink-soft) calc(50% - 1px),
+    var(--ink-soft) calc(50% + 1px),
+    transparent calc(50% + 1px)
+  );
+  pointer-events: none;
+  border-radius: 7px;
+}
+
+.cell--past .cell__num {
+  position: relative;
+  z-index: 1;
+}
+
+/* Past events/bookings - horizontal strikethrough */
+.entry--past {
+  opacity: 0.6;
+}
+
+.entry--past .entry__time,
+.entry--past .entry__name,
+.entry--past .entry__desc {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--ink-soft);
+}
+
+.entry--past .entry__time {
+  color: var(--ink-soft);
+}
+
+/* Hover effect for past items */
+.cell--past:hover {
+  opacity: 0.65;
+}
+
+/* ============================================================
+   MOBILE RESPONSIVE STYLES
+   ============================================================ */
+
+/* Mobile: Base adjustments */
+@media (max-width: 768px) {
+  .app {
+    padding: 20px 16px 48px;
+  }
+
+  /* Header adjustments */
+  .app__header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .header__brand {
+    width: 100%;
+  }
+
+  .brand__mark {
+    font-size: 24px;
+  }
+
+  .brand__sub {
+    font-size: 10px;
+  }
+
+  /* Month navigation - make it full width */
+  .month-nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .month-nav h1 {
+    font-size: 18px;
+    min-width: auto;
+  }
+
+  .nav-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  /* Header account - stack items */
+  .header__account {
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 11px;
+    width: 100%;
+  }
+
+  .header__account .btn {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  /* Flash messages */
+  .flash {
+    font-size: 12px;
+    padding: 8px 12px;
+    display: block;
+    width: 100%;
+  }
+
+  /* Calendar grid - adjust cell sizing */
+  .grid {
+    padding: 8px;
+  }
+
+  .grid__weekdays {
+    font-size: 10px;
+    padding: 4px 2px 8px;
+  }
+
+  .grid__week {
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+
+  .cell {
+    padding: 6px 5px;
+    aspect-ratio: 1 / 1;
+  }
+
+  .cell__num {
+    font-size: 11px;
+  }
+
+  .cell__tally {
+    font-size: 11px;
+  }
+
+  .cell__train-marker {
+    font-size: 9px;
+    padding: 1px 3px;
+  }
+
+  /* Agenda sidebar */
+  .agenda {
+    padding: 16px;
+  }
+
+  .agenda__head h2 {
+    font-size: 18px;
+  }
+
+  /* Entry adjustments */
+  .entry {
+    grid-template-columns: 65px 1fr;
+    gap: 8px;
+    padding: 8px 0;
+  }
+
+  .entry__time {
+    font-size: 11px;
+  }
+
+  .entry__name {
+    font-size: 13.5px;
+  }
+
+  .entry__desc,
+  .entry__payment-info {
+    font-size: 12px;
+  }
+
+  .entry__owner {
+    font-size: 10px;
+  }
+
+  .entry__actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Buttons */
+  .btn {
+    font-size: 12.5px;
+    padding: 9px 14px;
+  }
+
+  .icon-btn {
+    font-size: 11px;
+  }
+
+  /* Dialogs */
+  dialog.dialog {
+    width: min(92vw, 420px);
+  }
+
+  dialog.dialog--wide {
+    width: min(96vw, 640px);
+  }
+
+  .dialog__form {
+    padding: 18px 20px 16px;
+  }
+
+  .dialog__form h3 {
+    font-size: 17px;
+  }
+
+  .time-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* Panel grid */
+  .panel {
+    padding: 18px;
+  }
+
+  .panel__title {
+    font-size: 17px;
+  }
+
+  /* Futsal row - stack on mobile */
+  .futsal-row {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .futsal-row__actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .futsal-row__actions .btn {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  /* User table - reduce padding */
+  .user-table th,
+  .user-table td {
+    padding: 8px 6px 8px 0;
+    font-size: 12.5px;
+  }
+
+  /* Payment page */
+  .pay-page {
+    padding: 20px 16px 48px;
+  }
+
+  .pay-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .pay-summary,
+  .pay-action {
+    padding: 18px;
+  }
+
+  .pay-summary__title,
+  .pay-action__title {
+    font-size: 18px;
+  }
+
+  .pay-dl {
+    grid-template-columns: 100px 1fr;
+    gap: 6px 12px;
+    font-size: 12.5px;
+  }
+
+  .pay-options {
+    grid-template-columns: 1fr;
+  }
+
+  .qr-img {
+    width: 160px;
+    height: 160px;
+  }
+
+  .pay-amount-display {
+    font-size: 28px;
+  }
+
+  /* Cost preview */
+  .cost-preview {
+    gap: 3px 10px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .cost-preview__total {
+    font-size: 14px;
+  }
+
+  .cost-preview__half {
+    font-size: 12px;
+  }
+
+  /* Auth page */
+  .auth {
+    padding: 16px;
+  }
+
+  .auth__card {
+    padding: 24px 20px;
+  }
+
+  .auth__title {
+    font-size: 20px;
+  }
+
+  /* Agenda buttons */
+  .agenda__btns {
+    gap: 6px;
+  }
+
+  .agenda__btns .btn {
+    padding: 12px 16px;
+  }
+
+  /* Training schedule info */
+  .training-schedule-info {
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .training-schedule-info__icon {
+    font-size: 18px;
+  }
+
+  .training-schedule-info__line {
+    font-size: 13px;
+  }
+
+  .training-schedule-info__note {
+    font-size: 11px;
+  }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+  .app {
+    padding: 16px 12px 40px;
+  }
+
+  .brand__mark {
+    font-size: 22px;
+  }
+
+  .brand__sub {
+    font-size: 9px;
+  }
+
+  .month-nav h1 {
+    font-size: 16px;
+  }
+
+  .nav-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .header__account {
+    font-size: 10px;
+  }
+
+  .header__account .btn {
+    font-size: 11px;
+    padding: 7px 10px;
+  }
+
+  /* Make calendar cells even more compact */
+  .grid {
+    padding: 6px;
+  }
+
+  .grid__weekdays {
+    font-size: 9px;
+  }
+
+  .cell {
+    padding: 4px 3px;
+  }
+
+  .cell__num {
+    font-size: 10px;
+  }
+
+  .cell__tally,
+  .cell__train-marker {
+    font-size: 8px;
+  }
+
+  /* Entry - single column on very small screens */
+  .entry {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .entry__time {
+    font-size: 10.5px;
+  }
+
+  .entry__name {
+    font-size: 13px;
+  }
+
+  .entry__desc,
+  .entry__payment-info {
+    font-size: 11.5px;
+  }
+
+  /* Buttons */
+  .btn {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  .futsal-row__actions .btn {
+    width: 100%;
+  }
+
+  /* Dialogs */
+  .dialog__form {
+    padding: 16px 16px 14px;
+  }
+
+  .dialog__form h3 {
+    font-size: 16px;
+  }
+
+  .dialog__form label {
+    font-size: 11px;
+  }
+
+  .dialog__form input,
+  .dialog__form textarea {
+    font-size: 13px;
+    padding: 7px 9px;
+  }
+
+  /* Panel */
+  .panel {
+    padding: 16px;
+  }
+
+  .panel__title {
+    font-size: 16px;
+  }
+
+  /* Payment page */
+  .pay-summary,
+  .pay-action {
+    padding: 16px;
+  }
+
+  .pay-summary__title,
+  .pay-action__title {
+    font-size: 17px;
+  }
+
+  .qr-img {
+    width: 140px;
+    height: 140px;
+  }
+
+  .pay-amount-display {
+    font-size: 24px;
+  }
+}
+
+/* Landscape mobile - optimize horizontal space */
+@media (max-width: 768px) and (orientation: landscape) {
+  .board {
+    grid-template-columns: 1fr 280px;
+  }
+
+  .agenda {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .app {
+    padding: 28px 20px 56px;
+  }
+
+  .brand__mark {
+    font-size: 26px;
+  }
+
+  .month-nav h1 {
+    font-size: 20px;
+  }
+
+  .board {
+    grid-template-columns: 1fr 300px;
+    gap: 20px;
+  }
+
+  .pay-layout {
+    grid-template-columns: 1fr 340px;
+  }
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+  /* Increase touch targets */
+  .btn,
+  .icon-btn,
+  .nav-btn {
+    min-height: 44px;
+  }
+
+  .cell {
+    min-height: 40px;
+  }
+
+  .cselect__trigger {
+    min-height: 44px;
+  }
+
+  .cselect__option {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Prevent text selection on buttons */
+  .btn,
+  .icon-btn,
+  .nav-btn {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Active states for touch feedback */
+  .btn:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+
+  .cell:active {
+    opacity: 0.8;
+  }
+
+  .icon-btn:active {
+    opacity: 0.7;
+  }
+}

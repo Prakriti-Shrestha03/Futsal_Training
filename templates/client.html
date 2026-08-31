@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Ledger{% endblock %}
+{% block content %}
+<div class="app">
+  <header class="app__header">
+    <div class="header__brand">
+      <span class="brand__mark">Ledger</span>
+      <span class="brand__sub">browse courts</span>
+    </div>
+    <div class="header__account">
+      {% if futsals %}
+      <a href="{{ url_for('attendance_page', futsal_id=futsals[0].id) }}" class="btn" style="margin-right: 12px;">Attendance</a>
+      {% endif %}
+      <span>{{ current_user.username }}</span>
+      <form method="post" action="{{ url_for('logout') }}">
+        <button type="submit">Log out</button>
+      </form>
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash flash--{{ category or 'success' }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="panel-grid panel-grid--single">
+    <section class="panel">
+      <h2 class="panel__title">Available courts</h2>
+
+      <ul class="futsal-list">
+        {% for f in futsals %}
+        <li class="futsal-row">
+          <div class="futsal-row__info">
+            <a class="futsal-row__name" href="{{ url_for('calendar_view', futsal_id=f.id, year=now_year, month=now_month) }}">{{ f.name }}</a>
+            {% if f.location %}<p class="futsal-row__meta">{{ f.location }}</p>{% endif %}
+            {% if f.description %}<p class="futsal-row__meta">{{ f.description }}</p>{% endif %}
+          </div>
+          <div class="futsal-row__actions">
+            <a href="{{ url_for('attendance_page', futsal_id=f.id) }}" class="btn btn--primary" style="font-size: 14px; padding: 10px 18px;">View Attendance</a>
+            <a class="btn btn--primary" href="{{ url_for('calendar_view', futsal_id=f.id, year=now_year, month=now_month) }}" style="font-size: 14px; padding: 10px 18px;">View Calendar</a>
+          </div>
+        </li>
+        {% else %}
+        <li class="entry entry--empty">No courts are available to book yet.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Database Migration{% endblock %}
+{% block content %}
+<div class="pay-page">
+  <header class="pay-page__header">
+    <div class="header__brand">
+      <span class="brand__mark">Database Migration</span>
+      <span class="brand__sub">Update database schema</span>
+    </div>
+    <div class="header__account">
+      <a href="{{ url_for('admin_panel') }}" class="btn">← Back to Admin</a>
+      <span>{{ current_user.username }}</span>
+      <form method="post" action="{{ url_for('logout') }}">
+        <button type="submit">Log out</button>
+      </form>
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for message in messages %}
+        <div class="flash">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="pay-summary">
+    <h2 class="pay-summary__title">Database Schema Migration</h2>
+    
+    <p style="margin-bottom: 20px;">
+      This will add the following columns to your production database if they don't exist:
+    </p>
+    
+    <ul style="margin-left: 20px; margin-bottom: 20px; line-height: 1.8;">
+      <li><code>training_programs.fingerprint_id</code> (VARCHAR(64) UNIQUE) - For fingerprint enrollment</li>
+      <li><code>attendance.tap_in_time</code> (TIMESTAMP) - For recording tap in times</li>
+      <li><code>attendance.tap_out_time</code> (TIMESTAMP) - For recording tap out times</li>
+    </ul>
+    
+    <p style="margin-bottom: 20px; padding: 12px; background: #FFF3CD; border-left: 4px solid #FFC107; color: #856404; border-radius: 4px;">
+      <strong>Warning:</strong> This will modify your production database. Make sure you have a backup before proceeding.
+    </p>
+    
+    <form method="POST" onsubmit="return confirm('Are you sure you want to run the database migration? This will modify the production database schema.');">
+      <button type="submit" class="btn btn--primary" style="padding: 14px 24px; font-size: 16px;">
+        Run Migration
+      </button>
+    </form>
+    
+    <p style="margin-top: 20px; font-size: 13px; color: var(--ink-soft);">
+      The migration is safe to run multiple times - it will check if columns already exist before adding them.
+    </p>
+  </div>
+</div>
+{% endblock %}

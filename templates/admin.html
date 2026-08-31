@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — Ledger{% endblock %}
+{% block content %}
+<div class="app">
+  <header class="app__header">
+    <div class="header__brand">
+      <span class="brand__mark">Ledger</span>
+      <span class="brand__sub">admin dashboard</span>
+    </div>
+    <div class="header__account">
+      <span>{{ current_user.username }} · admin</span>
+      <form method="post" action="{{ url_for('logout') }}">
+        <button type="submit">Log out</button>
+      </form>
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash flash--{{ category or 'success' }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="panel-grid">
+    <section class="panel">
+      <h2 class="panel__title">Futsal courts</h2>
+
+      <ul class="futsal-list">
+        {% for f in futsals %}
+        <li class="futsal-row">
+          <div class="futsal-row__info">
+            <a class="futsal-row__name" href="{{ url_for('calendar_view', futsal_id=f.id, year=now_year, month=now_month) }}">{{ f.name }}</a>
+            {% if f.location %}<p class="futsal-row__meta">{{ f.location }}</p>{% endif %}
+            {% if f.description %}<p class="futsal-row__meta">{{ f.description }}</p>{% endif %}
+          </div>
+          <div class="futsal-row__actions">
+            <button type="button" class="icon-btn" onclick="document.getElementById('edit-futsal-{{ f.id }}').showModal()">Edit</button>
+            <form method="post" action="{{ url_for('delete_futsal', futsal_id=f.id) }}" onsubmit="return confirm('Delete {{ f.name }} and all its bookings?');">
+              <button type="submit" class="icon-btn icon-btn--danger">Delete</button>
+            </form>
+          </div>
+        </li>
+
+        <dialog id="edit-futsal-{{ f.id }}" class="dialog">
+          <form method="post" action="{{ url_for('edit_futsal', futsal_id=f.id) }}" class="dialog__form">
+            <h3>Edit court</h3>
+            <label>Name
+              <input type="text" name="name" value="{{ f.name }}" required>
+            </label>
+            <label>Location
+              <input type="text" name="location" value="{{ f.location }}">
+            </label>
+            <label>Description
+              <textarea name="description" rows="3">{{ f.description }}</textarea>
+            </label>
+            <div class="dialog__actions">
+              <button type="button" class="btn" onclick="document.getElementById('edit-futsal-{{ f.id }}').close()">Cancel</button>
+              <button type="submit" class="btn btn--primary">Save</button>
+            </div>
+          </form>
+        </dialog>
+        {% else %}
+        <li class="entry entry--empty">No courts yet — add one below.</li>
+        {% endfor %}
+      </ul>
+
+      {% if multi_futsal_mode or futsals|length == 0 %}
+      <details class="add-disclosure">
+        <summary>+ Add a court</summary>
+        <form method="post" action="{{ url_for('add_futsal') }}" class="inline-form">
+          <label>Name
+            <input type="text" name="name" placeholder="Court name" required>
+          </label>
+          <label>Location
+            <input type="text" name="location" placeholder="Optional">
+          </label>
+          <label>Description
+            <textarea name="description" rows="2" placeholder="Optional"></textarea>
+          </label>
+          <button type="submit" class="btn btn--primary">Add court</button>
+        </form>
+      </details>
+      {% else %}
+      <p class="panel__note">Single-court mode is on, so only one court is allowed. Turn off MULTI_FUTSAL_MODE in app.py to add more.</p>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <h2 class="panel__title">Users</h2>
+
+      <table class="user-table">
+        <thead>
+          <tr><th>Username</th><th>Role</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td>{{ u.username }}</td>
+            <td>
+              {% if u.id == current_user.id %}
+                <span class="role-badge">{{ u.role }}</span>
+              {% else %}
+                <form method="post" action="{{ url_for('admin_change_role', user_id=u.id) }}" class="role-form">
+                  <select name="role" class="role-select" onchange="this.form.submit()">
+                    {% for r in all_roles %}
+                    <option value="{{ r }}" {% if r == u.role %}selected{% endif %}>{{ r }}</option>
+                    {% endfor %}
+                  </select>
+                </form>
+              {% endif %}
+            </td>
+            <td>
+              {% if u.id != current_user.id %}
+              <form method="post" action="{{ url_for('admin_delete_user', user_id=u.id) }}" onsubmit="return confirm('Delete user {{ u.username }}?');">
+                <button type="submit" class="icon-btn icon-btn--danger">Delete</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <details class="add-disclosure">
+        <summary>+ Add a user</summary>
+        <form method="post" action="{{ url_for('admin_add_user') }}" class="inline-form">
+          <label>Username
+            <input type="text" name="username" required>
+          </label>
+          <label>Password
+            <input type="password" name="password" required minlength="6">
+          </label>
+          <label>Role
+            <select name="role">
+              {% for r in all_roles %}
+              <option value="{{ r }}">{{ r }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <button type="submit" class="btn btn--primary">Add user</button>
+        </form>
+      </details>
+    </section>
+  </div>
+</div>
+{% endblock %}

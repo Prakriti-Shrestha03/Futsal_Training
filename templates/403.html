@@ -1,0 +1,12 @@
+{% extends "auth_base.html" %}
+{% block title %}Access denied — Ledger{% endblock %}
+{% block auth_form %}
+<h2 class="auth__title">Access denied</h2>
+<p class="auth__sub">You don't have permission to view that page.</p>
+
+{% if current_user.is_authenticated %}
+<a href="{{ url_for(dashboard_endpoint()) }}" class="btn btn--primary btn--block">Back to my dashboard</a>
+{% else %}
+<a href="{{ url_for('login') }}" class="btn btn--primary btn--block">Log in</a>
+{% endif %}
+{% endblock %}

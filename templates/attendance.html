@@ -1,0 +1,583 @@
+{% extends "base.html" %}
+{% block title %}Attendance — {{ futsal.name }}{% endblock %}
+{% block content %}
+<div class="app">
+  <header class="app__header">
+    <div class="header__brand">
+      <span class="brand__mark">Attendance Tracker</span>
+      <span class="brand__sub">{{ futsal.name }}</span>
+    </div>
+    <div class="header__account">
+      <a href="{{ url_for('calendar_view', futsal_id=futsal.id, year=target_date.year, month=target_date.month) }}" class="btn">← Back to Calendar</a>
+      {% if multi_futsal_mode or current_user.is_admin %}
+      <a href="{{ url_for(dashboard_endpoint()) }}">Dashboard</a>
+      {% endif %}
+      <span>{{ current_user.username }}</span>
+      <form method="post" action="{{ url_for('logout') }}">
+        <button type="submit">Log out</button>
+      </form>
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash flash--{{ category or 'success' }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="panel-grid panel-grid--single">
+    <section class="panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 class="panel__title" style="margin: 0;">Attendance for {{ target_date.strftime('%A, %B %d, %Y') }}</h2>
+        <div style="display: flex; gap: 10px;">
+          <a href="{{ url_for('attendance_page', futsal_id=futsal.id, date=prev_date) }}" class="btn">← Previous Day</a>
+          <a href="{{ url_for('attendance_page', futsal_id=futsal.id, date=next_date) }}" class="btn">Next Day →</a>
+        </div>
+      </div>
+
+      {% if not scheduled %}
+        <p class="entry entry--empty">
+          {% if current_user.is_client %}
+            Your child has no training sessions scheduled for this day.
+          {% else %}
+            No training sessions scheduled for this day.
+          {% endif %}
+        </p>
+      {% else %}
+        <div class="attendance-info-box">
+          <h3>Summary</h3>
+          {% if current_user.is_client %}
+            <p>Your Children: <strong>{{ scheduled|length }}</strong></p>
+          {% else %}
+            <p>Total Scheduled: <strong>{{ scheduled|length }}</strong> students</p>
+          {% endif %}
+          <p>Present: <strong id="summary-present">{{ scheduled|selectattr('attendance_status', 'equalto', 'present')|list|length }}</strong></p>
+          <p>Absent: <strong id="summary-absent">{{ scheduled|selectattr('attendance_status', 'equalto', 'absent')|list|length }}</strong></p>
+          {% if not current_user.is_client %}
+          <p>Unmarked: <strong id="summary-unmarked">{{ scheduled|selectattr('attendance_status', 'equalto', 'unmarked')|list|length }}</strong></p>
+          {% endif %}
+          {% if is_today %}
+          <p class="oracle-refresh-status" id="oracle-refresh-status">
+            <span id="oracle-refresh-indicator" class="refresh-dot refresh-dot--idle" title="Checking Oracle attendance…"></span>
+            Live attendance sync active — refreshes every 30 s
+          </p>
+          {% endif %}
+          <p class="attendance-note">
+            <strong>Note:</strong> Students are automatically marked <strong>PRESENT</strong> when they tap in using the fingerprint scanner. 
+            Tap out records departure time but maintains present status.
+          </p>
+        </div>
+
+        <table class="attendance-table">
+          <thead>
+            <tr>
+              <th>Child Name</th>
+              {% if not current_user.is_client %}
+              <th>Parent Name</th>
+              {% endif %}
+              <th>Status</th>
+              <th>Arrived (Tap In)</th>
+              <th>Left (Tap Out)</th>
+              <th>Duration</th>
+              {% if current_user.can_manage_futsals %}
+              <th>Actions</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for tp in scheduled %}
+            {% set record = tp.attendance_record %}
+            <tr class="attendance-row attendance-row--{{ tp.attendance_status }}" data-tp-id="{{ tp.id }}" data-status="{{ tp.attendance_status }}">
+              <td class="attendance-name">
+                {{ tp.child_name }}
+                {% if current_user.can_manage_futsals and not tp.fingerprint_id %}
+                  <span class="badge badge--warning" title="Fingerprint not enrolled">!</span>
+                {% endif %}
+                {% if current_user.is_client %}
+                  {% if tp.fingerprint_id %}
+                    <span class="card-registered-badge" title="Card number: {{ tp.fingerprint_id }}">&#128190; Card registered</span>
+                  {% else %}
+                    <span class="card-missing-badge" title="No card enrolled yet">&#9888; No card enrolled</span>
+                  {% endif %}
+                {% endif %}
+              </td>
+              {% if not current_user.is_client %}
+              <td>{{ tp.parent_name }}</td>
+              {% endif %}
+              <td>
+                <span class="status-badge status-badge--{{ tp.attendance_status }}">
+                  {{ tp.attendance_status|upper }}
+                </span>
+              </td>
+              <td>
+                {% if record and record.tap_in_time %}
+                  <span class="time-display">{{ record.tap_in_time.strftime('%H:%M') }}</span>
+                {% else %}
+                  <span class="time-display time-display--empty">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if record and record.tap_out_time %}
+                  <span class="time-display">{{ record.tap_out_time.strftime('%H:%M') }}</span>
+                {% else %}
+                  <span class="time-display time-display--empty">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if record and record.duration_minutes %}
+                  <span class="duration-display">{{ record.duration_minutes }} min</span>
+                {% else %}
+                  <span class="duration-display duration-display--empty">—</span>
+                {% endif %}
+              </td>
+              {% if current_user.can_manage_futsals %}
+              <td>
+                {% if not tp.fingerprint_id %}
+                  <button type="button" class="btn btn--small" onclick="openEnrollDialog({{ tp.id }}, '{{ tp.child_name }}')">
+                    Enroll Fingerprint
+                  </button>
+                {% else %}
+                  <span class="fingerprint-id" title="Fingerprint ID: {{ tp.fingerprint_id }}">Enrolled</span>
+                {% endif %}
+              </td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        {% if current_user.can_manage_futsals %}
+        <div style="margin-top: 24px; display: flex; gap: 12px;">
+          <form method="POST" action="{{ url_for('finalize_attendance', futsal_id=futsal.id) }}" onsubmit="return confirm('Mark all unmarked students as absent?')">
+            <input type="hidden" name="date" value="{{ target_date }}">
+            <button type="submit" class="btn btn--primary">Finalize Attendance (Mark Rest Absent)</button>
+          </form>
+        </div>
+        {% endif %}
+      {% endif %}
+
+
+    </section>
+  </div>
+</div>
+
+{# Enrollment Dialog - Staff/Admin only #}
+{% if current_user.can_manage_futsals %}
+<dialog id="enroll-dialog" class="dialog">
+  <form method="post" action="" id="enroll-form" class="dialog__form">
+    <h3>Enroll Fingerprint</h3>
+    <p id="enroll-student-name" style="margin-bottom: 16px; font-weight: 600;"></p>
+    
+    <label>Fingerprint ID
+      <input type="text" name="fingerprint_id" id="fingerprint-id-input" 
+             placeholder="Scan fingerprint or enter ID manually" required>
+    </label>
+    
+    <p class="dialog__note">
+      Scan the student's fingerprint using your scanner device, or enter the fingerprint ID manually.
+    </p>
+    
+    <div class="dialog__actions">
+      <button type="button" class="btn" onclick="document.getElementById('enroll-dialog').close()">Cancel</button>
+      <button type="submit" class="btn btn--primary">Save Fingerprint</button>
+    </div>
+  </form>
+</dialog>
+
+<style>
+.attendance-info-box {
+  background: var(--surface-dim);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.attendance-info-box h3 {
+  margin: 0 0 12px 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+}
+
+.attendance-info-box p {
+  margin: 6px 0;
+  font-size: 14px;
+}
+
+.attendance-note {
+  margin-top: 12px !important;
+  padding: 10px;
+  background: color-mix(in srgb, var(--gold) 10%, transparent);
+  border-left: 3px solid var(--gold);
+  border-radius: 4px;
+  font-size: 13px !important;
+  line-height: 1.5;
+}
+
+.attendance-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+.attendance-table th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ink-soft);
+  padding: 12px 8px;
+  border-bottom: 2px solid var(--hairline);
+  background: var(--surface-dim);
+}
+
+.attendance-table td {
+  padding: 14px 8px;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 13.5px;
+}
+
+.attendance-row--present {
+  background: color-mix(in srgb, var(--pine) 5%, transparent);
+}
+
+.attendance-row--absent {
+  background: color-mix(in srgb, var(--rust) 5%, transparent);
+  opacity: 0.7;
+}
+
+.status-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.status-badge--present {
+  background: var(--pine);
+  color: var(--surface);
+}
+
+.status-badge--absent {
+  background: var(--rust);
+  color: var(--surface);
+}
+
+.status-badge--unmarked {
+  background: var(--hairline);
+  color: var(--ink-soft);
+}
+
+.time-display {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pine-dark);
+}
+
+.time-display--empty {
+  color: var(--ink-soft);
+  opacity: 0.5;
+}
+
+.duration-display {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.duration-display--empty {
+  color: var(--ink-soft);
+  opacity: 0.5;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 12px;
+  margin-left: 6px;
+}
+
+.badge--warning {
+  color: var(--gold);
+}
+
+.fingerprint-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--pine-dark);
+}
+
+/* parent-facing card registration indicators */
+.card-registered-badge {
+  display: block;
+  font-size: 11px;
+  color: var(--pine-dark);
+  margin-top: 3px;
+  font-style: italic;
+}
+
+.card-missing-badge {
+  display: block;
+  font-size: 11px;
+  color: var(--rust);
+  margin-top: 3px;
+  font-style: italic;
+}
+
+.btn--small {
+  font-size: 11px;
+  padding: 6px 10px;
+}
+
+.api-info-panel {
+  margin-top: 32px;
+  padding: 20px;
+  background: var(--surface-dim);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+}
+
+.api-info-panel h3 {
+  margin: 0 0 16px 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+}
+
+.api-endpoint {
+  margin: 16px 0;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+}
+
+.api-endpoint h4 {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: var(--pine-dark);
+}
+
+.api-url {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 8px 10px;
+  background: var(--pine);
+  color: var(--surface);
+  border-radius: 4px;
+  margin: 8px 0;
+}
+
+.api-payload {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 10px;
+  background: var(--surface-dim);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  margin: 8px 0;
+  overflow-x: auto;
+}
+
+.api-note {
+  font-size: 12px;
+  color: var(--pine-dark);
+  margin: 8px 0;
+  font-style: italic;
+}
+
+.api-endpoint--oracle {
+  background: color-mix(in srgb, var(--gold) 8%, var(--surface));
+  border-color: var(--gold);
+}
+
+.attendance-name {
+  font-weight: 600;
+}
+
+/* Oracle live-refresh indicator */
+.oracle-refresh-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin: 10px 0 4px 0;
+}
+
+.refresh-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.refresh-dot--idle    { background: var(--hairline); }
+.refresh-dot--syncing { background: var(--gold); animation: pulse-dot 1s infinite; }
+.refresh-dot--ok      { background: var(--pine); }
+.refresh-dot--error   { background: var(--rust); }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+</style>
+
+<script>
+function openEnrollDialog(tpId, childName) {
+  const dialog = document.getElementById('enroll-dialog');
+  const form = document.getElementById('enroll-form');
+  const nameDisplay = document.getElementById('enroll-student-name');
+  const input = document.getElementById('fingerprint-id-input');
+  
+  nameDisplay.textContent = 'Student: ' + childName;
+  form.action = '{{ url_for("enroll_fingerprint", futsal_id=futsal.id, tp_id=0) }}'.replace('/0/', '/' + tpId + '/');
+  input.value = '';
+  
+  dialog.showModal();
+}
+
+// Close dialog when clicking backdrop
+document.getElementById('enroll-dialog').addEventListener('click', (e) => {
+  const rect = e.target.getBoundingClientRect();
+  const inside =
+    rect.top <= e.clientY &&
+    e.clientY <= rect.top + rect.height &&
+    rect.left <= e.clientX &&
+    e.clientX <= rect.left + rect.width;
+  if (!inside) e.target.close();
+});
+</script>
+{% endif %}
+
+{% if is_today and scheduled %}
+<script>
+(function () {
+  "use strict";
+
+  // ── config ────────────────────────────────────────────────────────────────
+  const FUTSAL_ID   = {{ futsal.id }};
+  const TARGET_DATE = "{{ target_date.isoformat() }}";
+  const POLL_MS     = 30_000;   // 30 seconds
+
+  // All tp IDs on this page that have a card enrolled (data-tp-id is always set)
+  const ALL_TP_IDS = Array.from(
+    document.querySelectorAll("tr[data-tp-id]")
+  ).map(r => r.dataset.tpId).filter(Boolean).join(",");
+
+  if (!ALL_TP_IDS) return;  // nothing to poll
+
+  // ── DOM helpers ───────────────────────────────────────────────────────────
+  const dot = document.getElementById("oracle-refresh-indicator");
+
+  function setDot(state) {
+    if (!dot) return;
+    dot.className = "refresh-dot refresh-dot--" + state;
+  }
+
+  function rowForTp(tpId) {
+    return document.querySelector(`tr[data-tp-id="${tpId}"]`);
+  }
+
+  function badgeInRow(row) {
+    return row ? row.querySelector(".status-badge") : null;
+  }
+
+  // ── summary counter helpers ───────────────────────────────────────────────
+  function recountSummary() {
+    let present = 0, absent = 0, unmarked = 0;
+    document.querySelectorAll("tr[data-tp-id]").forEach(r => {
+      const s = r.dataset.status || "unmarked";
+      if (s === "present")  present++;
+      else if (s === "absent") absent++;
+      else unmarked++;
+    });
+    const el = id => document.getElementById(id);
+    if (el("summary-present"))  el("summary-present").textContent  = present;
+    if (el("summary-absent"))   el("summary-absent").textContent   = absent;
+    if (el("summary-unmarked")) el("summary-unmarked").textContent = unmarked;
+  }
+
+  // ── status update logic ───────────────────────────────────────────────────
+  const STATUS_CLASSES = ["attendance-row--present", "attendance-row--absent", "attendance-row--unmarked"];
+  const BADGE_CLASSES  = ["status-badge--present",   "status-badge--absent",   "status-badge--unmarked"];
+
+  function applyStatus(tpId, newStatus) {
+    const row = rowForTp(tpId);
+    if (!row) return;
+
+    const current = row.dataset.status;
+    // Never visually downgrade a present back to absent/unmarked
+    if (current === "present") return;
+    if (current === newStatus) return;
+
+    // Update row background
+    STATUS_CLASSES.forEach(c => row.classList.remove(c));
+    row.classList.add("attendance-row--" + newStatus);
+    row.dataset.status = newStatus;
+
+    // Update badge text + colour
+    const badge = badgeInRow(row);
+    if (badge) {
+      BADGE_CLASSES.forEach(c => badge.classList.remove(c));
+      badge.classList.add("status-badge--" + newStatus);
+      badge.textContent = newStatus.toUpperCase();
+    }
+  }
+
+  // ── poll ──────────────────────────────────────────────────────────────────
+  function poll() {
+    setDot("syncing");
+
+    const url = new URL("/api/oracle-attendance-status", location.origin);
+    url.searchParams.set("futsal_id", FUTSAL_ID);
+    url.searchParams.set("date",      TARGET_DATE);
+    url.searchParams.set("tp_ids",    ALL_TP_IDS);
+
+    fetch(url.toString(), { credentials: "same-origin" })
+      .then(r => {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(data => {
+        const statuses = data.statuses || {};
+        let changed = false;
+        Object.entries(statuses).forEach(([tpId, status]) => {
+          const row = rowForTp(tpId);
+          if (row && row.dataset.status !== status && row.dataset.status !== "present") {
+            applyStatus(tpId, status);
+            changed = true;
+          }
+        });
+        if (changed) recountSummary();
+        setDot("ok");
+        // Briefly show green then go back to idle
+        setTimeout(() => setDot("idle"), 2000);
+      })
+      .catch(err => {
+        console.warn("Oracle attendance poll failed:", err);
+        setDot("error");
+        setTimeout(() => setDot("idle"), 3000);
+      });
+  }
+
+  // Initial poll right after page load (slight delay to not block render)
+  setTimeout(poll, 2000);
+  // Recurring poll
+  setInterval(poll, POLL_MS);
+})();
+</script>
+{% endif %}
+
+{% endblock %}
