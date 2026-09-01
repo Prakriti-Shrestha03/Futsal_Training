@@ -35,17 +35,17 @@ body {
 /* ---------- Logo image in header ---------- */
 
 .header__logo {
-  height: 52px;
+  height: 72px;
   width: auto;
   display: block;
   object-fit: contain;
 }
 
 .auth__logo {
-  height: 64px;
+  height: 100px;
   width: auto;
   display: block;
-  margin: 0 auto 8px;
+  margin: 0 auto 12px;
   object-fit: contain;
 }
 

@@ -4,7 +4,7 @@
 <div class="app">
   <header class="app__header">
     <div class="header__brand">
-      <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="The Game Futsal" class="header__logo">
+      <img src="{{ url_for('static', filename='logo2.jpeg') }}" alt="The Game Futsal" class="header__logo">
     </div>
     <div class="header__account">
       <span>{{ current_user.username }} · admin</span>
@@ -28,6 +28,8 @@
 
       <ul class="futsal-list">
         {% for f in futsals %}
+        {# In single-court mode only show the first court #}
+        {% if multi_futsal_mode or loop.first %}
         <li class="futsal-row">
           <div class="futsal-row__info">
             <a class="futsal-row__name" href="{{ url_for('calendar_view', futsal_id=f.id, year=now_year, month=now_month) }}">{{ f.name }}</a>
@@ -36,9 +38,11 @@
           </div>
           <div class="futsal-row__actions">
             <button type="button" class="icon-btn" onclick="document.getElementById('edit-futsal-{{ f.id }}').showModal()">Edit</button>
+            {% if multi_futsal_mode %}
             <form method="post" action="{{ url_for('delete_futsal', futsal_id=f.id) }}" onsubmit="return confirm('Delete {{ f.name }} and all its bookings?');">
               <button type="submit" class="icon-btn icon-btn--danger">Delete</button>
             </form>
+            {% endif %}
           </div>
         </li>
 
@@ -60,8 +64,9 @@
             </div>
           </form>
         </dialog>
+        {% endif %}
         {% else %}
-        <li class="entry entry--empty">No courts yet — add one below.</li>
+        <li class="entry entry--empty">No court yet — add one below.</li>
         {% endfor %}
       </ul>
 
