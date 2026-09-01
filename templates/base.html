@@ -16,13 +16,13 @@
   <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
   </noscript>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=6">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
   <div id="toast-container"></div>
   {% block content %}{% endblock %}
-  <script src="{{ url_for('static', filename='app.js') }}?v=5"></script>
+  <script src="{{ url_for('static', filename='app.js') }}?v=6"></script>
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>

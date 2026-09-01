@@ -546,14 +546,22 @@ dialog.dialog::backdrop {
 
 .cselect__option.is-disabled {
   color: var(--ink-soft);
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
   text-decoration: line-through;
+  text-decoration-color: var(--rust);
+  text-decoration-thickness: 1.5px;
 }
 
 .cselect__option.is-disabled:hover,
 .cselect__option.is-disabled:focus {
   background: none;
+}
+
+/* Trigger shows "No slots available" when all options are past */
+.cselect__value--empty {
+  color: var(--rust);
+  font-style: italic;
 }
 
 .time-row {

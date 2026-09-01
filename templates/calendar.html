@@ -339,8 +339,6 @@
     document.getElementById("add-dialog").showModal();
     updateCost();
   }
-
-  /* ── Open Edit dialog (data read from button's data-* attributes) ── */
   function openEditDialog(btn) {
     var id       = btn.dataset.id;
     var name     = btn.dataset.name;
@@ -394,6 +392,18 @@
     /* Add booking button */
     var addBtn = document.querySelector(".js-open-add");
     if (addBtn) addBtn.addEventListener("click", openAddDialog);
+
+    /* Guard: block form submission if no valid start time is selected */
+    var addForm = document.getElementById("add-booking-form");
+    if (addForm) {
+      addForm.addEventListener("submit", function (e) {
+        var hiddenStart = addForm.querySelector('input[name="start_time"]');
+        if (!hiddenStart || !hiddenStart.value) {
+          e.preventDefault();
+          alert("All available start times for today have passed. Please choose a future date.");
+        }
+      });
+    }
 
     /* Edit buttons — delegate from the agenda list */
     document.querySelectorAll(".js-edit-btn").forEach(function (btn) {

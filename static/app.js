@@ -111,9 +111,10 @@ document.querySelectorAll(".cselect").forEach(initCselect);
 document.addEventListener("click", () => closeAllCselects(null));
 
 // ---------- Past-time restriction ----------
-// Greys out start-time options that have already passed, when the chosen date is today.
-// This is a UX nicety only — the server re-validates and is the real guard against
-// booking a slot that has already passed.
+// Crosses out start-time options whose start time has already passed when the
+// chosen date is today. Runs on date change AND on a live 30-second tick so
+// the list stays accurate while the dialog is open.
+// Server-side re-validates as the real guard — this is purely UX.
 
 const pastTimeRefreshers = {};
 
@@ -135,15 +136,15 @@ function setupPastTimeRestriction(dateInputId, cselectId) {
   const root = document.getElementById(cselectId);
   if (!dateInput || !root) return;
 
-  // Get the duration select element - we need it to calculate end time
-  const durationSelectId = cselectId.replace('start', 'duration');
+  const durationSelectId = cselectId.replace("start", "duration");
   const durationRoot = document.getElementById(durationSelectId);
 
   function refresh() {
     const isToday = dateInput.value === todayISO();
+    const options = Array.from(root.querySelectorAll(".cselect__option"));
+
     if (!isToday) {
-      // If not today, enable all time slots
-      const options = Array.from(root.querySelectorAll(".cselect__option"));
+      // Future date — all slots are valid
       options.forEach((opt) => {
         opt.classList.remove("is-disabled");
         opt.setAttribute("aria-disabled", "false");
@@ -152,51 +153,51 @@ function setupPastTimeRestriction(dateInputId, cselectId) {
     }
 
     const nowHHMM = currentHHMM();
-    const options = Array.from(root.querySelectorAll(".cselect__option"));
-    
-    // Get the current duration in minutes (default to 60 if not found)
-    let durationMinutes = 60;
-    if (durationRoot) {
-      const selectedDuration = durationRoot.querySelector(".cselect__option.is-selected");
-      if (selectedDuration) {
-        durationMinutes = parseInt(selectedDuration.dataset.value) || 60;
-      }
-    }
 
     options.forEach((opt) => {
-      const startHHMM = opt.dataset.value;
-      // Calculate end time by adding duration
-      const [startH, startM] = startHHMM.split(':').map(Number);
-      const startMinutes = startH * 60 + startM;
-      const endMinutes = startMinutes + durationMinutes;
-      const endH = Math.floor(endMinutes / 60);
-      const endM = endMinutes % 60;
-      const endHHMM = String(endH).padStart(2, '0') + ':' + String(endM).padStart(2, '0');
-      
-      // Disable if the END time has passed
-      const isPast = endHHMM < nowHHMM;
+      // A slot is past if its START time has already passed
+      const isPast = opt.dataset.value <= nowHHMM;
       opt.classList.toggle("is-disabled", isPast);
       opt.setAttribute("aria-disabled", isPast ? "true" : "false");
     });
 
+    // If the currently selected option just became disabled, jump to the
+    // first available slot (or leave the trigger showing "—" if all gone)
     const selected = options.find((o) => o.classList.contains("is-selected"));
     if (selected && selected.classList.contains("is-disabled")) {
       const nextValid = options.find((o) => !o.classList.contains("is-disabled"));
-      if (nextValid) setCselectValue(root, nextValid.dataset.value);
+      if (nextValid) {
+        setCselectValue(root, nextValid.dataset.value);
+      } else {
+        // All slots passed — clear the trigger text to signal nothing is available
+        const valueEl = root.querySelector(".cselect__value");
+        const hidden  = root.querySelector('input[type="hidden"]');
+        if (valueEl) valueEl.textContent = "No slots available";
+        if (hidden)  hidden.value = "";
+        options.forEach((o) => o.classList.remove("is-selected"));
+      }
     }
   }
 
   dateInput.addEventListener("change", refresh);
-  // Also refresh when duration changes
+
+  // Refresh when duration changes (duration select is irrelevant now, but
+  // keep the hook so cost preview and other listeners stay consistent)
   if (durationRoot) {
-    const durationOptions = durationRoot.querySelectorAll(".cselect__option");
-    durationOptions.forEach(opt => {
-      opt.addEventListener("click", () => setTimeout(refresh, 100));
+    durationRoot.querySelectorAll(".cselect__option").forEach((opt) => {
+      opt.addEventListener("click", () => setTimeout(refresh, 50));
     });
   }
+
   pastTimeRefreshers[cselectId] = refresh;
   refresh();
 }
 
 setupPastTimeRestriction("add-date", "add-start-select");
 setupPastTimeRestriction("edit-date", "edit-start-select");
+
+// Live clock: re-check every 30 seconds so slots cross out in real time
+// while the booking dialog is open
+setInterval(() => {
+  Object.values(pastTimeRefreshers).forEach((fn) => fn());
+}, 30_000);
