@@ -2,8 +2,8 @@
 {% block content %}
 <div class="auth">
   <div class="auth__card">
-    <div class="header__brand auth__brand">
-      <span class="brand__mark">FUTSAL SCHEDULER</span>
+    <div class="auth__brand">
+      <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="The Game Futsal" class="auth__logo">
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}

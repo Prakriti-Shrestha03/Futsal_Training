@@ -1,18 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Futsal Scheduler{% endblock %}
+{% block title %}The Game Futsal{% endblock %}
 
 {% block content %}
 <div class="home">
 
   <header class="home__header">
     <div class="header__brand">
-      <span class="brand__mark">FUTSAL SCHEDULER</span>
-      <span class="brand__sub">Pick a court to view its calendar</span>
+      <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="The Game Futsal" class="header__logo">
     </div>
     <div class="header__account">
-      {% if futsals %}
-      <a href="{{ url_for('attendance_page', futsal_id=futsals[0].id) }}" class="btn" style="margin-right: 12px;">Attendance</a>
-      {% endif %}
       <span class="role-badge role-badge--{{ current_user.role }}">{{ current_user.role }}</span>
       <span>{{ current_user.username }}</span>
       {% if current_user.is_admin %}

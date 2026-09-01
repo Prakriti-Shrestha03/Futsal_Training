@@ -1,11 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Dashboard — Ledger{% endblock %}
+{% block title %}Dashboard — The Game Futsal{% endblock %}
 {% block content %}
 <div class="app">
   <header class="app__header">
     <div class="header__brand">
-      <span class="brand__mark">Ledger</span>
-      <span class="brand__sub">browse courts</span>
+      <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="The Game Futsal" class="header__logo">
     </div>
     <div class="header__account">
       <span>{{ current_user.username }}</span>

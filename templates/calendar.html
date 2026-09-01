@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ futsal.name }} — {{ month_name }} {{ year }}{% endblock %}
+{% block title %}{{ futsal.name }} — The Game Futsal{% endblock %}
 
 {% macro cselect(id, name, options, default_index=0) %}
 <div class="cselect" id="{{ id }}" data-name="{{ name }}">
@@ -35,8 +35,7 @@
   {# ── Header ── #}
   <header class="app__header">
     <div class="header__brand">
-      <span class="brand__mark">{{ futsal.name }}</span>
-      <span class="brand__sub">scheduling calendar</span>
+      <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="The Game Futsal" class="header__logo">
     </div>
 
     <nav class="month-nav">

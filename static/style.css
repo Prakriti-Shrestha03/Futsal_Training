@@ -1,14 +1,15 @@
     :root {
-  --paper: #E7E4DA;
-  --surface: #FBFAF5;
-  --surface-dim: #F1EEE5;
-  --ink: #202B3B;
-  --ink-soft: #5C6473;
-  --pine: #2F6F5E;
-  --pine-dark: #23564A;
-  --gold: #D9A441;
-  --rust: #B5533C;
-  --hairline: #CFC9BB;
+  /* ── The Game Futsal brand colours ── */
+  --paper: #F5F5F5;
+  --surface: #FFFFFF;
+  --surface-dim: #F0F0F0;
+  --ink: #1A1A1A;
+  --ink-soft: #555555;
+  --pine: #E31E24;        /* brand red — primary action colour  */
+  --pine-dark: #CC0000;   /* darker red — hover / active states */
+  --gold: #E31E24;        /* reuse red for accents (was gold)   */
+  --rust: #B30000;        /* deep red — errors / destructive    */
+  --hairline: #DDDDDD;
 
   --font-display: "Zilla Slab", Georgia, serif;
   --font-body: "Inter", -apple-system, sans-serif;
@@ -29,6 +30,23 @@ body {
   max-width: 1180px;
   margin: 0 auto;
   padding: 32px 24px 64px;
+}
+
+/* ---------- Logo image in header ---------- */
+
+.header__logo {
+  height: 52px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.auth__logo {
+  height: 64px;
+  width: auto;
+  display: block;
+  margin: 0 auto 8px;
+  object-fit: contain;
 }
 
 /* ---------- Header ---------- */

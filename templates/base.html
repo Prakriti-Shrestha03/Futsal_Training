@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}FUTSAL SCHEDULER{% endblock %}</title>
+  <title>{% block title %}The Game Futsal{% endblock %}</title>
   {# ── Google Fonts: non-blocking load ──────────────────────────────────────
      Load with media="print" so the browser fetches it without blocking render,
      then onload flips it to media="all" to apply the styles. The <noscript>
@@ -16,7 +16,7 @@
   <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
   </noscript>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=6">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=7">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
