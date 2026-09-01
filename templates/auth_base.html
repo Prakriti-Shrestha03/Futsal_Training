@@ -9,19 +9,8 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
-          <div class="flash flash--{{ category or 'success' }}" id="flash-msg">{{ message }}</div>
+          <div class="flash flash--{{ category or 'success' }}">{{ message }}</div>
         {% endfor %}
-        <script>
-          (function () {
-            const el = document.getElementById("flash-msg");
-            if (el) {
-              setTimeout(() => {
-                el.classList.add("flash--hide");
-                setTimeout(() => el.remove(), 400);
-              }, 3000);
-            }
-          })();
-        </script>
       {% endif %}
     {% endwith %}
 

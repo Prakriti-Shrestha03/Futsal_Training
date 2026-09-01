@@ -16,13 +16,24 @@
   <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
   </noscript>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=9">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=10">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
   <div id="toast-container"></div>
   {% block content %}{% endblock %}
   <script src="{{ url_for('static', filename='app.js') }}?v=6"></script>
+  <script>
+    /* Auto-dismiss flash messages after 4 s */
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll(".flash").forEach(function (el) {
+        setTimeout(function () {
+          el.classList.add("flash--hide");
+          setTimeout(function () { el.remove(); }, 400);
+        }, 4000);
+      });
+    });
+  </script>
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>
