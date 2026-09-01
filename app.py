@@ -30,8 +30,12 @@ from flask_login import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 
-import firebase_admin
-from firebase_admin import credentials, messaging
+# firebase_admin is imported lazily in _init_firebase() to avoid adding
+# 2-5 seconds to every cold start on Vercel serverless. The SDK pulls in
+# grpc, google-auth, and cryptography — all expensive at import time.
+_firebase_admin   = None
+_firebase_creds   = None
+_firebase_messaging = None
 
 # Only import APScheduler when not running on Vercel (serverless)
 _IS_VERCEL = os.environ.get("VERCEL") == "1"
@@ -84,14 +88,33 @@ login_manager.login_message = "Please log in to continue."
 FIREBASE_CRED_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "firebase-service-account.json")
 FIREBASE_ENABLED = os.path.exists(FIREBASE_CRED_PATH)
 
-if FIREBASE_ENABLED:
-    cred = credentials.Certificate(FIREBASE_CRED_PATH)
-    firebase_admin.initialize_app(cred)
-else:
+if not FIREBASE_ENABLED:
     print(
         "WARNING: firebase-service-account.json not found. "
         "Push notifications are disabled."
     )
+
+def _init_firebase():
+    """Lazily import and initialise firebase-admin on first use.
+    Keeps it out of the module-level import path so Vercel cold starts
+    don't pay the 2-5 s SDK initialisation cost on every request."""
+    global _firebase_admin, _firebase_messaging
+    if _firebase_admin is not None:
+        return True  # already initialised
+    if not FIREBASE_ENABLED:
+        return False
+    try:
+        import firebase_admin as _fb
+        from firebase_admin import credentials as _creds, messaging as _msg
+        if not _fb._apps:
+            cred = _creds.Certificate(FIREBASE_CRED_PATH)
+            _fb.initialize_app(cred)
+        _firebase_admin = _fb
+        _firebase_messaging = _msg
+        return True
+    except Exception as exc:
+        print("Firebase init error:", exc)
+        return False
 
 # ---------- roles ----------
 ROLE_ADMIN  = "admin"
@@ -371,7 +394,7 @@ def has_conflict(event_date, start_time, end_time, futsal_id, exclude_id=None):
 # ---------- push notifications ----------
 
 def send_push_to_all(title, body):
-    if not FIREBASE_ENABLED:
+    if not _init_firebase():
         print(f"[push skipped] {title}: {body}")
         return
 
@@ -379,16 +402,17 @@ def send_push_to_all(title, body):
     if not tokens:
         return
 
+    msg_mod = _firebase_messaging
     messages = [
-        messaging.Message(
-            notification=messaging.Notification(title=title, body=body),
+        msg_mod.Message(
+            notification=msg_mod.Notification(title=title, body=body),
             token=tok,
         )
         for tok in tokens
     ]
 
     try:
-        response = messaging.send_each(messages)
+        response = msg_mod.send_each(messages)
     except Exception as exc:
         print("Push send error:", exc)
         return

@@ -4,16 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}FUTSAL SCHEDULER{% endblock %}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  {# ── Google Fonts: non-blocking load ──────────────────────────────────────
+     Load with media="print" so the browser fetches it without blocking render,
+     then onload flips it to media="all" to apply the styles. The <noscript>
+     fallback covers JS-disabled environments. #}
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+        media="print" onload="this.media='all'">
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  </noscript>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
   <div id="toast-container"></div>
   {% block content %}{% endblock %}
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
-  <script src="{{ url_for('static', filename='firebase-init.js') }}"></script>
   <script src="{{ url_for('static', filename='app.js') }}?v=5"></script>
+  {% block extra_scripts %}{% endblock %}
 </body>
 </html>

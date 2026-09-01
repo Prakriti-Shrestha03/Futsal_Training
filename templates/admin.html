@@ -146,3 +146,9 @@
   </div>
 </div>
 {% endblock %}
+
+{% block extra_scripts %}
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js" defer></script>
+<script src="{{ url_for('static', filename='firebase-init.js') }}" defer></script>
+{% endblock %}
