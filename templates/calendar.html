@@ -35,7 +35,7 @@
   {# ── Header ── #}
   <header class="app__header">
     <div class="header__brand">
-      <img src="{{ url_for('static', filename='logo2.jpeg') }}" alt="The Game Futsal" class="header__logo">
+      <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="The Game Futsal" class="header__logo">
     </div>
 
     <nav class="month-nav">
@@ -52,7 +52,9 @@
               onclick="document.getElementById('edit-court-dialog').showModal()"
               aria-label="Edit court details">&#9881; Court settings</button>
       {% endif %}
-      {% if multi_futsal_mode or current_user.is_admin %}
+      {% if current_user.is_admin %}
+      <a href="{{ url_for('admin_panel') }}">Admin</a>
+      {% elif multi_futsal_mode %}
       <a href="{{ url_for(dashboard_endpoint()) }}">Dashboard</a>
       {% endif %}
       <span>{{ current_user.username }}</span>

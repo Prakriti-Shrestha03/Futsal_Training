@@ -4,7 +4,7 @@
 <div class="app">
   <header class="app__header">
     <div class="header__brand">
-      <img src="{{ url_for('static', filename='logo2.jpeg') }}" alt="The Game Futsal" class="header__logo">
+      <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="The Game Futsal" class="header__logo">
     </div>
     <div class="header__account">
       <span>{{ current_user.username }} · admin</span>
@@ -24,12 +24,12 @@
 
   <div class="panel-grid">
     <section class="panel">
-      <h2 class="panel__title">Futsal courts</h2>
+      <h2 class="panel__title">{% if multi_futsal_mode %}Futsal courts{% else %}Court{% endif %}</h2>
 
+      {% if multi_futsal_mode %}
+      {# ── Multi-court mode: full list with add/delete ── #}
       <ul class="futsal-list">
         {% for f in futsals %}
-        {# In single-court mode only show the first court #}
-        {% if multi_futsal_mode or loop.first %}
         <li class="futsal-row">
           <div class="futsal-row__info">
             <a class="futsal-row__name" href="{{ url_for('calendar_view', futsal_id=f.id, year=now_year, month=now_month) }}">{{ f.name }}</a>
@@ -38,56 +38,74 @@
           </div>
           <div class="futsal-row__actions">
             <button type="button" class="icon-btn" onclick="document.getElementById('edit-futsal-{{ f.id }}').showModal()">Edit</button>
-            {% if multi_futsal_mode %}
             <form method="post" action="{{ url_for('delete_futsal', futsal_id=f.id) }}" onsubmit="return confirm('Delete {{ f.name }} and all its bookings?');">
               <button type="submit" class="icon-btn icon-btn--danger">Delete</button>
             </form>
-            {% endif %}
           </div>
         </li>
-
         <dialog id="edit-futsal-{{ f.id }}" class="dialog">
           <form method="post" action="{{ url_for('edit_futsal', futsal_id=f.id) }}" class="dialog__form">
             <h3>Edit court</h3>
-            <label>Name
-              <input type="text" name="name" value="{{ f.name }}" required>
-            </label>
-            <label>Location
-              <input type="text" name="location" value="{{ f.location }}">
-            </label>
-            <label>Description
-              <textarea name="description" rows="3">{{ f.description }}</textarea>
-            </label>
+            <label>Name <input type="text" name="name" value="{{ f.name }}" required></label>
+            <label>Location <input type="text" name="location" value="{{ f.location }}"></label>
+            <label>Description <textarea name="description" rows="3">{{ f.description }}</textarea></label>
             <div class="dialog__actions">
               <button type="button" class="btn" onclick="document.getElementById('edit-futsal-{{ f.id }}').close()">Cancel</button>
               <button type="submit" class="btn btn--primary">Save</button>
             </div>
           </form>
         </dialog>
-        {% endif %}
         {% else %}
-        <li class="entry entry--empty">No court yet — add one below.</li>
+        <li class="entry entry--empty">No courts yet — add one below.</li>
         {% endfor %}
       </ul>
-
-      {% if multi_futsal_mode or futsals|length == 0 %}
       <details class="add-disclosure">
         <summary>+ Add a court</summary>
         <form method="post" action="{{ url_for('add_futsal') }}" class="inline-form">
-          <label>Name
-            <input type="text" name="name" placeholder="Court name" required>
-          </label>
-          <label>Location
-            <input type="text" name="location" placeholder="Optional">
-          </label>
-          <label>Description
-            <textarea name="description" rows="2" placeholder="Optional"></textarea>
-          </label>
+          <label>Name <input type="text" name="name" placeholder="Court name" required></label>
+          <label>Location <input type="text" name="location" placeholder="Optional"></label>
+          <label>Description <textarea name="description" rows="2" placeholder="Optional"></textarea></label>
           <button type="submit" class="btn btn--primary">Add court</button>
         </form>
       </details>
+
       {% else %}
-      <p class="panel__note">Single-court mode is on, so only one court is allowed. Turn off MULTI_FUTSAL_MODE in app.py to add more.</p>
+      {# ── Single-court mode: just the one court + a direct calendar link ── #}
+      {% set court = futsals[0] if futsals else none %}
+      {% if court %}
+      <div class="futsal-row" style="border-bottom: none; padding-bottom: 0;">
+        <div class="futsal-row__info">
+          <p class="futsal-row__name" style="font-weight:600; font-size:15px;">{{ court.name }}</p>
+          {% if court.location %}<p class="futsal-row__meta">{{ court.location }}</p>{% endif %}
+          {% if court.description %}<p class="futsal-row__meta">{{ court.description }}</p>{% endif %}
+        </div>
+        <div class="futsal-row__actions">
+          <a class="btn btn--primary" href="{{ url_for('calendar_view', futsal_id=court.id, year=now_year, month=now_month) }}">Open Calendar</a>
+          <button type="button" class="icon-btn" onclick="document.getElementById('edit-court-single').showModal()">Edit</button>
+        </div>
+      </div>
+      <dialog id="edit-court-single" class="dialog">
+        <form method="post" action="{{ url_for('edit_futsal', futsal_id=court.id) }}" class="dialog__form">
+          <h3>Edit court</h3>
+          <label>Name <input type="text" name="name" value="{{ court.name }}" required></label>
+          <label>Location <input type="text" name="location" value="{{ court.location }}"></label>
+          <label>Description <textarea name="description" rows="3">{{ court.description }}</textarea></label>
+          <div class="dialog__actions">
+            <button type="button" class="btn" onclick="document.getElementById('edit-court-single').close()">Cancel</button>
+            <button type="submit" class="btn btn--primary">Save</button>
+          </div>
+        </form>
+      </dialog>
+      {% else %}
+      {# No court exists yet — show a minimal add form #}
+      <p class="panel__note" style="margin-bottom:14px;">No court set up yet.</p>
+      <form method="post" action="{{ url_for('add_futsal') }}" class="inline-form">
+        <label>Court name <input type="text" name="name" placeholder="e.g. The Game Futsal" required></label>
+        <label>Location <input type="text" name="location" placeholder="Optional"></label>
+        <label>Description <textarea name="description" rows="2" placeholder="Optional"></textarea></label>
+        <button type="submit" class="btn btn--primary">Create court</button>
+      </form>
+      {% endif %}
       {% endif %}
     </section>
 

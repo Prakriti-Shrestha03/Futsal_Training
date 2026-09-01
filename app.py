@@ -1,17 +1,3 @@
-"""
-Booking App
-===========
-Independent Flask application that handles futsal COURT BOOKINGS only:
-  - courts (Futsal)
-  - one-off bookings (Event)
-  - payments on bookings
-  - push notification reminders
-
-This app has its own database and does NOT know anything about training
-programs. If a court is double-booked by the sister Training App at the
-same time, this app cannot see that — the two apps were deliberately split
-with separate databases and no cross-checking (by design/request).
-"""
 
 import os
 import calendar as cal
@@ -322,7 +308,7 @@ def parse_time(s):
 #          list is disabled everywhere, no matter how many Futsal rows exist
 #          in the database. Admin is unaffected either way — they always land
 #          on /admin, since role assignment isn't tied to court count.
-MULTI_FUTSAL_MODE = True
+MULTI_FUTSAL_MODE = False 
 
 
 # ---------- booking hours & slot options ----------
@@ -454,6 +440,11 @@ def inject_dashboard_endpoint():
             return "login"
         if current_user.is_admin:
             return "admin_panel"
+        # In single-court mode staff/client have no dashboard — send them home
+        # (home immediately redirects to the single court's calendar).
+        # In multi-court mode send them to their role-specific panel.
+        if not MULTI_FUTSAL_MODE:
+            return "home"
         if current_user.is_staff:
             return "staff_panel"
         return "client_panel"
