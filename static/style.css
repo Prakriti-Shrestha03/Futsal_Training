@@ -10,6 +10,8 @@
   --gold: #E31E24;        /* reuse red for accents (was gold)   */
   --rust: #B30000;        /* deep red — errors / destructive    */
   --hairline: #DDDDDD;
+  --success: #2E7D4F;     /* dark green — positive notifications */
+  --success-dark: #1F5C38;/* deeper green — success hover/text  */
 
   --font-display: "Zilla Slab", Georgia, serif;
   --font-body: "Inter", -apple-system, sans-serif;
@@ -139,7 +141,7 @@ body {
 }
 
 .flash {
-  background: var(--pine);
+  background: var(--success);
   color: var(--surface);
   font-family: var(--font-mono);
   font-size: 13px;
@@ -160,7 +162,7 @@ body {
 }
 
 .flash--success {
-  background: var(--pine);
+  background: var(--success);
   color: var(--surface);
 }
 
@@ -935,9 +937,9 @@ dialog.dialog::backdrop {
 }
 
 .pay-badge--confirmed {
-  background: color-mix(in srgb, var(--pine) 12%, var(--surface));
-  color: var(--pine-dark);
-  border-color: color-mix(in srgb, var(--pine) 28%, transparent);
+  background: color-mix(in srgb, var(--success) 12%, var(--surface));
+  color: var(--success-dark);
+  border-color: color-mix(in srgb, var(--success) 28%, transparent);
 }
 
 /* ---------- Pending entry in agenda (muted) ---------- */
@@ -1316,13 +1318,13 @@ dialog.dialog::backdrop {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--pine) 15%, var(--surface));
-  color: var(--pine-dark);
+  background: color-mix(in srgb, var(--success) 15%, var(--surface));
+  color: var(--success-dark);
   font-size: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--pine);
+  border: 2px solid var(--success);
 }
 
 .pay-action__msg {
