@@ -42,6 +42,25 @@ app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-only-change-me-booking")
 
+# ── Connection pool config ───────────────────────────────────────────────────
+# Vercel serverless: each invocation is short-lived and isolated — NullPool
+# means no pool is maintained; every request opens and closes its own
+# connection cleanly. A persistent pool would accumulate stale connections
+# across invocations and exhaust the DB server's connection limit.
+#
+# Gunicorn / long-lived: keep a small pool but recycle connections every 5 min
+# and pre-ping before use to detect connections dropped by pgBouncer/RDS.
+if _IS_VERCEL:
+    from sqlalchemy.pool import NullPool
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"poolclass": NullPool}
+else:
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "pool_recycle":  300,
+        "pool_size":     5,
+        "max_overflow":  10,
+    }
+
 db = SQLAlchemy(app)
 
 
@@ -56,15 +75,16 @@ def ensure_schema():
         print("Default admin created — username: admin  password: admin123")
 
 
-_schema_ready = False
-
-@app.before_request
-def init_db():
-    """Run once on the first request — works on both gunicorn and Vercel serverless."""
-    global _schema_ready
-    if not _schema_ready:
+# ── Schema initialisation ────────────────────────────────────────────────────
+# On Vercel the schema already exists (created during first-ever deploy or
+# via a migration). Running db.create_all() on every cold start adds a full
+# round-trip to every first request. Skip it on Vercel entirely.
+#
+# On gunicorn/local we still run it once per process startup via app_context
+# so new columns / tables are picked up automatically on redeploy.
+if not _IS_VERCEL:
+    with app.app_context():
         ensure_schema()
-        _schema_ready = True
 
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
@@ -117,7 +137,7 @@ class User(UserMixin, db.Model):
     id            = db.Column(db.Integer, primary_key=True)
     username      = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    role          = db.Column(db.String(20), nullable=False, default=ROLE_CLIENT)
+    role          = db.Column(db.String(20), nullable=False, default=ROLE_CLIENT, index=True)
     created_at    = db.Column(db.DateTime, default=db.func.now())
 
     def set_password(self, raw):
@@ -177,23 +197,32 @@ class Event(db.Model):
     __tablename__ = "events"
 
     id             = db.Column(db.Integer, primary_key=True)
-    futsal_id      = db.Column(db.Integer, db.ForeignKey("futsals.id"), nullable=False)
-    user_id        = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    futsal_id      = db.Column(db.Integer, db.ForeignKey("futsals.id"), nullable=False, index=True)
+    user_id        = db.Column(db.Integer, db.ForeignKey("users.id"),   nullable=True,  index=True)
     name           = db.Column(db.String(100), nullable=False)
     phone_number   = db.Column(db.String(20), nullable=True)
     description    = db.Column(db.Text)
-    event_date     = db.Column(db.Date, nullable=False)
+    event_date     = db.Column(db.Date, nullable=False, index=True)
     start_time     = db.Column(db.Time, nullable=False)
     end_time       = db.Column(db.Time, nullable=False)
     created_at     = db.Column(db.DateTime, default=db.func.now())
-    reminder_sent  = db.Column(db.Boolean, default=False, nullable=False)
+    reminder_sent  = db.Column(db.Boolean, default=False, nullable=False, index=True)
     # --- payment fields ---
     num_players    = db.Column(db.Integer, default=1, nullable=False)
     amount_due     = db.Column(db.Float,   default=0.0, nullable=False)
     amount_paid    = db.Column(db.Float,   default=0.0, nullable=False)
-    payment_status = db.Column(db.String(20), default=PAYMENT_PENDING, nullable=False)
+    payment_status = db.Column(db.String(20), default=PAYMENT_PENDING, nullable=False, index=True)
 
-    owner = db.relationship("User", foreign_keys=[user_id])
+    # Composite index: almost every query filters by both futsal_id AND event_date
+    # (calendar_view month range, has_conflict overlap check). Without this index
+    # every calendar page load does a full table scan.
+    __table_args__ = (
+        db.Index("ix_events_futsal_date", "futsal_id", "event_date"),
+    )
+
+    # lazy="joined" issues a single LEFT JOIN instead of one SELECT per event
+    # when the calendar renders owner names — eliminates the N+1 query pattern.
+    owner = db.relationship("User", foreign_keys=[user_id], lazy="joined")
 
     @property
     def owner_name(self):
