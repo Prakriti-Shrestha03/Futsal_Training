@@ -16,7 +16,7 @@
   <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
   </noscript>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=10">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=11">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -25,14 +25,23 @@
   <script src="{{ url_for('static', filename='app.js') }}?v=6"></script>
   <script>
     /* Auto-dismiss flash messages after 4 s */
-    document.addEventListener("DOMContentLoaded", function () {
-      document.querySelectorAll(".flash").forEach(function (el) {
-        setTimeout(function () {
-          el.classList.add("flash--hide");
-          setTimeout(function () { el.remove(); }, 400);
-        }, 4000);
-      });
-    });
+    (function () {
+      function dismissFlashes() {
+        document.querySelectorAll(".flash").forEach(function (el) {
+          setTimeout(function () {
+            el.classList.add("flash--hide");
+            setTimeout(function () { el.remove(); }, 400);
+          }, 4000);
+        });
+      }
+      /* Script is at end of <body> so DOM is ready — run immediately.
+         DOMContentLoaded may have already fired at this point. */
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", dismissFlashes);
+      } else {
+        dismissFlashes();
+      }
+    })();
   </script>
   {% block extra_scripts %}{% endblock %}
 </body>
