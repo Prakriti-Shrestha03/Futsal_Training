@@ -37,7 +37,7 @@ body {
 /* ---------- Logo image in header ---------- */
 
 .header__logo {
-  height: 56px;
+  height: 80px;
   width: auto;
   display: block;
   object-fit: contain;
@@ -59,7 +59,7 @@ body {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  padding: 10px 24px;
+  padding: 8px 24px;
   margin-bottom: 24px;
   background: var(--surface);
   border-bottom: 1px solid var(--hairline);
