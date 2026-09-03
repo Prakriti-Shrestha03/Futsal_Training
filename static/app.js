@@ -201,3 +201,40 @@ setupPastTimeRestriction("edit-date", "edit-start-select");
 setInterval(() => {
   Object.values(pastTimeRefreshers).forEach((fn) => fn());
 }, 30_000);
+
+// ---------- User menu dropdown ----------
+(function () {
+  const btn      = document.getElementById("user-menu-btn");
+  const dropdown = document.getElementById("user-menu-dropdown");
+  if (!btn || !dropdown) return;
+
+  function userMenuOpen() {
+    dropdown.hidden = false;
+    btn.setAttribute("aria-expanded", "true");
+  }
+
+  function userMenuClose() {
+    dropdown.hidden = true;
+    btn.setAttribute("aria-expanded", "false");
+  }
+
+  // Expose close so the "Change password" item can call it before opening the dialog
+  window.userMenuClose = userMenuClose;
+
+  btn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    dropdown.hidden ? userMenuOpen() : userMenuClose();
+  });
+
+  // Close when clicking anywhere outside the menu
+  document.addEventListener("click", function (e) {
+    if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+      userMenuClose();
+    }
+  });
+
+  // Close on Escape
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") userMenuClose();
+  });
+})();

@@ -57,14 +57,21 @@
       {% elif multi_futsal_mode %}
       <a href="{{ url_for(dashboard_endpoint()) }}">Dashboard</a>
       {% endif %}
-      <span>{{ current_user.username }}</span>
-      <button type="button" class="btn btn--sm"
-              onclick="document.getElementById('change-pw-dialog').showModal()">
-        Change password
-      </button>
-      <form method="post" action="{{ url_for('logout') }}">
-        <button type="submit">Log out</button>
-      </form>
+      <div class="user-menu">
+        <button type="button" class="user-menu__trigger" id="user-menu-btn"
+                aria-haspopup="true" aria-expanded="false">
+          {{ current_user.username }} &#9662;
+        </button>
+        <div class="user-menu__dropdown" id="user-menu-dropdown" hidden>
+          <button type="button" class="user-menu__item"
+                  onclick="userMenuClose(); document.getElementById('change-pw-dialog').showModal()">
+            Change password
+          </button>
+          <form method="post" action="{{ url_for('logout') }}">
+            <button type="submit" class="user-menu__item user-menu__item--danger">Log out</button>
+          </form>
+        </div>
+      </div>
     </div>
   </header>
 

@@ -724,6 +724,76 @@ dialog.dialog::backdrop {
   padding: 0;
 }
 
+/* ---------- User menu dropdown ---------- */
+
+.user-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.user-menu__trigger {
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.user-menu__trigger:hover {
+  background: var(--surface-dim);
+}
+
+.user-menu__dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 170px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  z-index: 200;
+  overflow: hidden;
+}
+
+.user-menu__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 11px 16px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink);
+  text-decoration: none;
+  transition: background 0.12s;
+}
+
+.user-menu__item:hover {
+  background: var(--surface-dim);
+}
+
+.user-menu__item--danger {
+  color: var(--rust);
+}
+
+.user-menu__item--danger:hover {
+  background: color-mix(in srgb, var(--rust) 8%, var(--surface));
+}
+
+.user-menu__dropdown form {
+  margin: 0;
+  border-top: 1px solid var(--hairline);
+}
+
 /* ---------- Dashboard panels (admin / staff / client) ---------- */
 
 .panel-grid {
