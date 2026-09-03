@@ -37,7 +37,7 @@ body {
 /* ---------- Logo image in header ---------- */
 
 .header__logo {
-  height: 44px;
+  height: 56px;
   width: auto;
   display: block;
   object-fit: contain;
@@ -695,28 +695,35 @@ dialog.dialog::backdrop {
 .header__account {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-family: var(--font-mono);
-  font-size: 12.5px;
+  gap: 12px;
+  font-family: var(--font-body);
+  font-size: 13px;
   color: var(--ink-soft);
 }
 
 .header__account form { margin: 0; }
 
 .header__account a {
-  color: var(--pine-dark);
-  font-weight: 600;
-  text-decoration: underline;
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.3px;
 }
 
-.header__account button {
+.header__account a:hover {
+  color: var(--pine);
+}
+
+/* Remove old generic button style — user menu overrides below */
+.header__account > button {
   background: none;
   border: none;
   font-family: inherit;
   font-size: inherit;
-  color: var(--pine-dark);
+  color: var(--ink-soft);
   cursor: pointer;
-  text-decoration: underline;
+  text-decoration: none;
   padding: 0;
 }
 
@@ -728,35 +735,39 @@ dialog.dialog::backdrop {
 }
 
 .user-menu__trigger {
-  background: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-dim);
   border: 1px solid var(--hairline);
-  border-radius: 20px;
-  font-family: var(--font-mono);
-  font-size: 12px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 13px;
   font-weight: 600;
-  color: var(--ink);
+  color: var(--ink) !important;
   cursor: pointer;
-  padding: 5px 12px;
-  text-decoration: none;
+  padding: 6px 14px;
+  text-decoration: none !important;
+  letter-spacing: 0.2px;
   transition: background 0.15s, border-color 0.15s;
   white-space: nowrap;
 }
 
 .user-menu__trigger:hover {
-  background: var(--surface-dim);
+  background: var(--hairline);
   border-color: #bbb;
 }
 
 .user-menu__dropdown {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   right: 0;
-  min-width: 170px;
+  min-width: 190px;
   background: var(--surface);
   border: 1px solid var(--hairline);
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-  z-index: 200;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06);
+  z-index: 300;
   overflow: hidden;
 }
 
@@ -764,15 +775,18 @@ dialog.dialog::backdrop {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 11px 16px;
+  padding: 12px 18px;
   font-family: var(--font-body);
-  font-size: 13.5px;
+  font-size: 14px;
+  font-weight: 500;
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--ink);
-  text-decoration: none;
+  color: var(--ink) !important;
+  text-decoration: none !important;
+  letter-spacing: 0.1px;
   transition: background 0.12s;
+  text-transform: none;
 }
 
 .user-menu__item:hover {
@@ -780,7 +794,7 @@ dialog.dialog::backdrop {
 }
 
 .user-menu__item--danger {
-  color: var(--rust);
+  color: var(--rust) !important;
 }
 
 .user-menu__item--danger:hover {
