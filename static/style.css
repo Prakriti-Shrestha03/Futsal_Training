@@ -405,6 +405,12 @@ body {
 
 .btn--block { width: 100%; margin-top: auto; }
 
+.btn--sm {
+  font-size: 11px;
+  padding: 4px 10px;
+  line-height: 1.4;
+}
+
 /* ---------- Dialogs ---------- */
 
 dialog.dialog {
