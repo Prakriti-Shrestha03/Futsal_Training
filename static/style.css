@@ -37,7 +37,7 @@ body {
 /* ---------- Logo image in header ---------- */
 
 .header__logo {
-  height: 72px;
+  height: 44px;
   width: auto;
   display: block;
   object-fit: contain;
@@ -55,26 +55,22 @@ body {
 
 .app__header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 16px;
-  padding-bottom: 18px;
+  gap: 12px;
+  padding: 10px 24px;
   margin-bottom: 24px;
-  position: relative;
+  background: var(--surface);
+  border-bottom: 1px solid var(--hairline);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .app__header::after {
-  content: "";
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 1px;
-  background-image: radial-gradient(circle, var(--hairline) 1.5px, transparent 1.6px),
-    linear-gradient(to right, var(--hairline) 0%, var(--hairline) 100%);
-  background-size: 14px 100%, 100% 1px;
-  background-repeat: repeat-x;
-  background-position: 0 bottom, 0 bottom;
-  opacity: 0.9;
+  display: none;
 }
 
 .header__brand {
@@ -733,20 +729,22 @@ dialog.dialog::backdrop {
 
 .user-menu__trigger {
   background: none;
-  border: none;
+  border: 1px solid var(--hairline);
+  border-radius: 20px;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--ink);
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
+  padding: 5px 12px;
   text-decoration: none;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
 }
 
 .user-menu__trigger:hover {
   background: var(--surface-dim);
+  border-color: #bbb;
 }
 
 .user-menu__dropdown {
