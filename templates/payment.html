@@ -62,14 +62,7 @@
         <h3 class="cost-breakdown__title">Cost breakdown</h3>
         <table class="cost-table">
           <tr>
-            <td>
-              {{ event.num_players }} player{{ 's' if event.num_players != 1 }}
-              &times; Rs. {{ price_per_player }}/hr
-              &times;
-              {% set dur_mins = ((event.end_time.hour * 60 + event.end_time.minute) - (event.start_time.hour * 60 + event.start_time.minute)) %}
-              {% set dur_hrs  = dur_mins / 60 %}
-              {{ dur_hrs|round(1) }} hr{{ 's' if dur_hrs != 1 }}
-            </td>
+            <td>Flat booking rate</td>
             <td class="cost-table__amt">Rs. {{ event.amount_due|int }}</td>
           </tr>
           <tr class="cost-table__row--paid">
@@ -123,7 +116,6 @@
         Scan the QR code with your banking app, then choose how much to pay below.
       </p>
 
-      {# Half-payment notice banner #}
       <div class="pay-notice pay-notice--info">
         <span class="pay-notice__icon" aria-hidden="true">&#9432;</span>
         <div>
@@ -133,12 +125,12 @@
         </div>
       </div>
 
-      {# Dummy QR — replace static/qr_dummy.png with the real merchant QR #}
+      {# QR code for payment #}
       <div class="qr-box">
-        <img src="{{ url_for('static', filename='qr_dummy.png') }}"
-             alt="Payment QR code (dummy placeholder)"
+        <img src="{{ url_for('static', filename='game futsal qr.jpeg') }}"
+             alt="The Game Futsal payment QR code"
              class="qr-img">
-        <p class="qr-label">Dummy QR &mdash; replace with real QR</p>
+        <p class="qr-label">Scan to pay via your banking app</p>
       </div>
 
       {# Payment amount display that updates with the radio buttons #}

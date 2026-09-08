@@ -26,7 +26,7 @@
 #}
 <div id="page-data"
      data-futsal-id="{{ futsal.id }}"
-     data-price-per-player="{{ price_per_player_per_hour | int }}"
+     data-booking-price="{{ booking_price | int }}"
      style="display:none"
      aria-hidden="true"></div>
 
@@ -191,9 +191,7 @@
               {% if e.description %}<p class="entry__desc">{{ e.description }}</p>{% endif %}
               {% if e.phone_number %}<p class="entry__desc">Phone: {{ e.phone_number }}</p>{% endif %}
               <p class="entry__payment-info">
-                {{ e.num_players }} player{{ 's' if e.num_players != 1 }}
-                &middot; Rs. {{ price_per_player_per_hour }}/player/hr
-                &middot; Rs. {{ e.amount_paid|int }} paid of Rs. {{ e.amount_due|int }}
+                Rs. {{ e.amount_paid|int }} paid of Rs. {{ e.amount_due|int }}
                 {% if e.balance_due > 0 %}
                   &middot; <span class="entry__balance">Rs. {{ e.balance_due|int }} remaining</span>
                 {% endif %}
@@ -355,7 +353,7 @@
   /* ── Read server values from data-* attributes ── */
   var pageData     = document.getElementById("page-data");
   var futsalId     = pageData ? pageData.dataset.futsalId : "";
-  var pricePerPlayerPerHour = pageData ? (parseInt(pageData.dataset.pricePerPlayer, 10) || 100) : 100;
+  var bookingPrice = pageData ? (parseInt(pageData.dataset.bookingPrice, 10) || 1000) : 1000;
 
   /* ── Open Add-booking dialog ── */
   function openAddDialog() {
@@ -406,17 +404,11 @@
   /* ── Cost preview: bookings ── */
 
   function updateCost() {
-    var playerInput   = document.getElementById("add-num-players");
-    var durationInput = document.querySelector("#add-duration-select input[type=hidden]");
-    var totalEl  = document.getElementById("cost-total");
-    var halfEl   = document.getElementById("cost-half");
-    if (!playerInput || !durationInput || !totalEl) return;
-
-    var players = Math.max(1, parseInt(playerInput.value, 10) || 1);
-    var minutes = parseInt(durationInput.value, 10) || 60;
-    var total   = players * pricePerPlayerPerHour * (minutes / 60);
-    totalEl.textContent = "Rs. " + Math.round(total);
-    halfEl.textContent  = "Rs. " + Math.round(total / 2);
+    var totalEl = document.getElementById("cost-total");
+    var halfEl  = document.getElementById("cost-half");
+    if (!totalEl) return;
+    totalEl.textContent = "Rs. " + bookingPrice;
+    halfEl.textContent  = "Rs. " + Math.round(bookingPrice / 2);
   }
 
   /* ── Wire everything up after DOM is ready ── */

@@ -1,7 +1,10 @@
 
 import os
 import calendar as cal
+import smtplib
+import threading
 from datetime import datetime, date, time, timedelta
+from email.mime.text import MIMEText
 from functools import wraps
 
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, abort
@@ -122,6 +125,48 @@ def _init_firebase():
         print("Firebase init error:", exc)
         return False
 
+# ---------- email notifications ----------
+EMAIL_SENDER   = os.environ.get("EMAIL_SENDER",   "pra0000kri@gmail.com")
+EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD",  "")   # Gmail App Password
+EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER",  "rojilauprety1@gmail.com")
+
+
+def send_booking_email(event):
+    """Send a 'New Booking' notification email to the admin.
+    Runs in a background thread so it never delays the HTTP response.
+    Requires EMAIL_PASSWORD env var set to a Gmail App Password."""
+    def _send():
+        if not EMAIL_PASSWORD:
+            print("[email] EMAIL_PASSWORD not set — skipping notification.")
+            return
+        try:
+            body = (
+                f"New booking received!\n\n"
+                f"Name:           {event.name}\n"
+                f"Date:           {event.event_date.strftime('%A, %d %B %Y')}\n"
+                f"Time:           {event.start_time.strftime('%H:%M')} – {event.end_time.strftime('%H:%M')}\n"
+                f"Players:        {event.num_players}\n"
+                f"Amount due:     Rs. {int(event.amount_due)}\n"
+                f"Payment status: {event.payment_status.upper()}\n"
+                f"Phone:          {event.phone_number or '—'}\n"
+                f"Notes:          {event.description or '—'}\n"
+            )
+            msg = MIMEText(body)
+            msg["Subject"] = "New Booking"
+            msg["From"]    = EMAIL_SENDER
+            msg["To"]      = EMAIL_RECEIVER
+
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+                smtp.login(EMAIL_SENDER, EMAIL_PASSWORD)
+                smtp.sendmail(EMAIL_SENDER, EMAIL_RECEIVER, msg.as_string())
+
+            print(f"[email] Booking notification sent for '{event.name}'.")
+        except Exception as exc:
+            print(f"[email] Failed to send notification: {exc}")
+
+    threading.Thread(target=_send, daemon=True).start()
+
+
 # ---------- roles ----------
 ROLE_ADMIN  = "admin"
 ROLE_STAFF  = "staff"
@@ -186,7 +231,7 @@ class Futsal(db.Model):
     events = db.relationship("Event", backref="futsal", lazy=True)
 
 
-PRICE_PER_PLAYER_PER_HOUR = 100  # Rs. per player per hour
+BOOKING_PRICE = 1000  # Rs. flat rate per booking (fixed regardless of players or duration)
 
 PAYMENT_PENDING   = "pending"
 PAYMENT_PARTIAL   = "partial"
@@ -832,7 +877,7 @@ def calendar_view(futsal_id, year, month):
         next_month=next_month,
         start_slots=START_SLOTS,
         duration_options=DURATION_OPTIONS,
-        price_per_player_per_hour=PRICE_PER_PLAYER_PER_HOUR,
+        booking_price=BOOKING_PRICE,
     )
 
 
@@ -894,12 +939,8 @@ def add_event(futsal_id):
     except (ValueError, TypeError):
         num_players = 1
 
-    # Duration in hours (start_time and end_time already validated above)
-    start_dt   = datetime.combine(event_date, start_time)
-    end_dt     = datetime.combine(event_date, end_time)
-    hours      = (end_dt - start_dt).total_seconds() / 3600
-
-    amount_due = num_players * PRICE_PER_PLAYER_PER_HOUR * hours
+    # Flat rate — price is fixed regardless of players or duration
+    amount_due = BOOKING_PRICE
     phone_number = request.form.get("phone_number", "").strip()
 
     # Validate phone number: exactly 10 digits if provided
@@ -925,6 +966,9 @@ def add_event(futsal_id):
     )
     db.session.add(event)
     db.session.commit()
+
+    # Notify admin by email (non-blocking — runs in background thread)
+    send_booking_email(event)
 
     # Redirect to payment page — booking is not confirmed until payment is made
     return redirect(url_for("payment_page", futsal_id=futsal_id, event_id=event.id))
@@ -996,7 +1040,7 @@ def payment_page(futsal_id, event_id):
         "payment.html",
         futsal=futsal,
         event=event,
-        price_per_player=PRICE_PER_PLAYER_PER_HOUR,
+        booking_price=BOOKING_PRICE,
     )
 
 
