@@ -142,6 +142,26 @@
     </section>
 
     <section class="panel">
+      <h2 class="panel__title">Booking QR code</h2>
+      <p style="font-size:13px; color:var(--ink-soft); margin-bottom:16px;">
+        Share or print this QR — players scan it to open the booking page directly.
+      </p>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:12px;">
+        <img src="{{ url_for('static', filename='website-qr.png') }}"
+             alt="Scan to book at The Game Futsal"
+             style="width:200px; height:200px; border:1px solid var(--hairline); border-radius:8px; padding:8px; background:#fff;">
+        <a href="{{ url_for('static', filename='website-qr.png') }}"
+           download="the-game-futsal-booking-qr.png"
+           class="btn btn--primary" style="font-size:13px;">
+          Download QR
+        </a>
+        <p style="font-size:11px; color:var(--ink-soft); font-family:var(--font-mono);">
+          https://futsal-training-ochre.vercel.app/
+        </p>
+      </div>
+    </section>
+
+    <section class="panel">
       <h2 class="panel__title">Users</h2>
 
       <table class="user-table">
