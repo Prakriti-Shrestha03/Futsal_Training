@@ -964,9 +964,6 @@ def add_event(futsal_id):
     db.session.add(event)
     db.session.commit()
 
-    # Notify admin by email (non-blocking — runs in background thread)
-    send_booking_email(event)
-
     # Redirect to payment page — booking is not confirmed until payment is made
     return redirect(url_for("payment_page", futsal_id=futsal_id, event_id=event.id))
 
@@ -1011,10 +1008,12 @@ def payment_page(futsal_id, event_id):
         if event.amount_paid >= event.amount_due:
             event.payment_status = PAYMENT_CONFIRMED
             db.session.commit()
+            send_booking_email(event)
             flash(f"Payment of Rs. {pay_amount:.0f} received. Booking confirmed!")
         elif event.amount_paid >= event.minimum_due:
             event.payment_status = PAYMENT_PARTIAL
             db.session.commit()
+            send_booking_email(event)
             flash(
                 f"Partial payment of Rs. {pay_amount:.0f} received. "
                 f"Booking confirmed. Rs. {event.balance_due:.0f} remaining."
